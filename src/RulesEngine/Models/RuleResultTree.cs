@@ -30,6 +30,8 @@ namespace RulesEngine.Models
         /// </value>
         public bool IsSuccess { get; set; }
 
+        public string PromotedEvent { get; set; }
+        
         /// <summary>
         /// Gets or sets the child result.
         /// </summary>

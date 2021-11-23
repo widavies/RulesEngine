@@ -22,7 +22,7 @@ namespace RulesEngine
         /// <summary>
         /// The nested operators
         /// </summary>
-        private readonly ExpressionType[] nestedOperators = new ExpressionType[] { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse };
+        private readonly ExpressionType[] nestedOperators = new ExpressionType[] { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse, ExpressionType.ExclusiveOr };
 
         /// <summary>
         /// The expression builder factory
@@ -188,7 +188,15 @@ namespace RulesEngine
             return (paramArray) => {
                 var (isSuccess, resultList) = ApplyOperation(paramArray, ruleFuncList, operation);
                 Func<object[], bool> isSuccessFn = (p) => isSuccess;
-                var result = Helpers.ToResultTree(_reSettings, parentRule, resultList, isSuccessFn);
+
+                var childRuleResults = resultList as RuleResultTree[] ?? resultList.ToArray();
+
+                var successEvent = operation == ExpressionType.ExclusiveOr && isSuccess
+                    ? childRuleResults.FirstOrDefault(x => x.IsSuccess)?.Rule.SuccessEvent
+                    : null;
+                
+                var result = Helpers.ToResultTree(_reSettings, parentRule, childRuleResults, isSuccessFn, "", successEvent);
+                
                 return result(paramArray);
             };
         }
@@ -223,7 +231,6 @@ namespace RulesEngine
                             return (isSuccess, resultList);
                         }
                         break;
-
                     case ExpressionType.Or:
                     case ExpressionType.OrElse:
                         isSuccess = isSuccess || ruleResult.IsSuccess;
@@ -234,6 +241,11 @@ namespace RulesEngine
                         break;
                 }
                 
+            }
+
+            if (operation == ExpressionType.ExclusiveOr)
+            {
+                isSuccess = resultList.Count(x => x.IsSuccess) == 1;
             }
             return (isSuccess, resultList);
         }
