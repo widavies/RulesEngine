@@ -125,7 +125,7 @@ namespace RulesEngine.HelperFunctions
             return genericMethod.Invoke(null, new[] { self }) as IList;
         }
 
-        private const string EXTRACT_INTERPOLATES = @"(?:(?<!\\)(?:\\\\)*{\w+(?<!\\)(?:\\\\)*})+";
+        private const string EXTRACT_INTERPOLATES = @"(?:(?<!\\)(?:\\\\)*{\w+(?<!\\)(?:\\\\)*}){2,}";
         private const string EXTRACT_SINGLES = @"(?<!\\)(?:\\\\)*(?<={)\w+(?<!\\)(?:\\\\)*(?=})";
 
         
