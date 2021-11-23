@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Text.RegularExpressions;
 
 namespace RulesEngine.HelperFunctions
 {
@@ -122,6 +123,30 @@ namespace RulesEngine.HelperFunctions
             var methodInfo = typeof(Enumerable).GetMethod("ToList");
             var genericMethod = methodInfo.MakeGenericMethod(innerType);
             return genericMethod.Invoke(null, new[] { self }) as IList;
+        }
+
+        private const string EXTRACT_INTERPOLATES = @"(?:(?<!\\)(?:\\\\)*{\w+(?<!\\)(?:\\\\)*})+";
+        private const string EXTRACT_SINGLES = @"(?<!\\)(?:\\\\)*(?<={)\w+(?<!\\)(?:\\\\)*(?=})";
+
+        
+        public static string ReplaceConcatShorthand(string expression)
+        {
+            var processed = expression;
+
+            // 1) Replace concat shorthand(s)
+            // The expression is "string.Concat(Var1, Var2) == string.Concat(Var3, Var4)"
+            // is identical to the shorthand "{Var1}{Var2} == {Var3}{Var4}"
+            // The preprocessor will go through and substitute these out using regex
+            var matches = Regex.Matches(expression, EXTRACT_INTERPOLATES).Cast<Match>();
+
+            foreach (var match in matches)
+            {
+                var vars = Regex.Matches(match.Value, EXTRACT_SINGLES).Cast<Match>();
+
+                processed = processed.Replace(match.Value, "string.Concat(" + string.Join(",", vars) + ")");
+            }
+
+            return processed;
         }
     }
 

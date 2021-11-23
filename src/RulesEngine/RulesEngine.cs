@@ -16,6 +16,7 @@ using RulesEngine.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -245,19 +246,69 @@ namespace RulesEngine
         /// <returns>list of rule result set</returns>
         private List<RuleResultTree> ValidateWorkflowAndExecuteRule(string workflowName, RuleParameter[] ruleParams)
         {
-            List<RuleResultTree> result;
-
-            if (RegisterRule(workflowName, ruleParams))
+            var workflow = _rulesCache.GetWorkflow(workflowName);
+            if (workflow != null)
             {
-                result = ExecuteAllRuleByWorkflow(workflowName, ruleParams);
+                _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
+
+                // Decide on execution order
+                var result = new List<RuleResultTree>();
+                var rules = workflow.Rules.ToList();
+
+                var intermediateParams = new List<ScopedParam>();
+
+                foreach (var rule in rules)
+                {
+                    if (RegisterRule(workflowName, rule, intermediateParams.ToArray(), ruleParams))
+                    {
+                        var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParams);
+
+                        var compiledRule = _rulesCache.GetCompiledRules(compiledRulesCacheKey)?[rule.RuleName];
+
+                        if (compiledRule == null)
+                        {
+                            _logger.LogTrace("Workflow {Workflow}, Rule {RuleName} was not compiled", workflowName,
+                                rule.RuleName);
+                            // if rules are not registered with Rules Engine
+                            throw new ArgumentException(
+                                $"Workflow {workflowName}, Rule {rule.RuleName} was not compiled");
+                        }
+
+                        var res = compiledRule(ruleParams);
+
+                        if (Enum.TryParse(rule.Operator, out ExpressionType nestedOperator) &&
+                            nestedOperator == ExpressionType.ExclusiveOr && res.IsSuccess)
+                        {
+                            intermediateParams.Add(new ScopedParam {
+                                Name = res.Rule.RuleName, Expression = res.PromotedEvent
+                            });
+                        }
+                        else if (res.IsSuccess)
+                        {
+                            intermediateParams.Add(new ScopedParam {
+                                Name = res.Rule.RuleName, Expression = res.Rule.SuccessEvent
+                            });
+                        }
+
+                        result.Add(res);
+                    }
+                    else
+                    {
+                        _logger.LogTrace($"Rule config file is not present for the {workflowName} workflow");
+                        // if rules are not registered with Rules Engine
+                        throw new ArgumentException($"Rule config file is not present for the {workflowName} workflow");
+                    }
+                }
+
+                FormatErrorMessages(result);
+                return result;
             }
             else
             {
-                _logger.LogTrace($"Rule config file is not present for the {workflowName} workflow");
+                _logger.LogTrace($"Workflow {workflowName} not found");
                 // if rules are not registered with Rules Engine
-                throw new ArgumentException($"Rule config file is not present for the {workflowName} workflow");
+                throw new ArgumentException($"Workflow {workflowName} not found");
             }
-            return result;
         }
 
         /// <summary>
@@ -268,21 +319,22 @@ namespace RulesEngine
         /// <returns>
         /// bool result
         /// </returns>
-        private bool RegisterRule(string workflowName, params RuleParameter[] ruleParams)
+        private bool RegisterRule(string workflowName, Rule rule, ScopedParam[] intermediateParams,
+            params RuleParameter[] ruleParams)
         {
             var compileRulesKey = GetCompiledRulesKey(workflowName, ruleParams);
-            if (_rulesCache.AreCompiledRulesUpToDate(compileRulesKey, workflowName))
-            {
-                return true;
-            }
 
             var workflow = _rulesCache.GetWorkflow(workflowName);
             if (workflow != null)
             {
                 var dictFunc = new Dictionary<string, RuleFunc<RuleResultTree>>();
-                foreach (var rule in workflow.Rules.Where(c => c.Enabled))
+
+                if (rule.Enabled)
                 {
-                    dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, workflow.GlobalParams?.ToArray()));
+                    var combined = workflow.GlobalParams?.Concat(intermediateParams).ToArray() ??
+                                   intermediateParams.ToArray();
+
+                    dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, combined));
                 }
 
                 _rulesCache.AddOrUpdateCompiledRule(compileRulesKey, dictFunc);
@@ -315,7 +367,6 @@ namespace RulesEngine
         {
             return _ruleCompiler.CompileRule(rule, ruleParams, scopedParams);
         }
-
 
 
         /// <summary>

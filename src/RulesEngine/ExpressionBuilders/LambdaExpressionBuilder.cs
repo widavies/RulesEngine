@@ -27,7 +27,8 @@ namespace RulesEngine.ExpressionBuilders
         {
             try
             {
-                var ruleDelegate = _ruleExpressionParser.Compile<bool>(rule.Expression, ruleParams);
+                var ruleDelegate =
+                    _ruleExpressionParser.Compile<bool>(Utils.ReplaceConcatShorthand(rule.Expression), ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)
@@ -47,7 +48,7 @@ namespace RulesEngine.ExpressionBuilders
         {
             try
             {
-                return _ruleExpressionParser.Parse(expression, parameters, returnType);
+                return _ruleExpressionParser.Parse(Utils.ReplaceConcatShorthand(expression), parameters, returnType);
             }
             catch(ParseException ex)
             {
