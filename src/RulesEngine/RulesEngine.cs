@@ -58,9 +58,9 @@ namespace RulesEngine
             _ruleCompiler = new RuleCompiler(new RuleExpressionBuilderFactory(_reSettings, _ruleExpressionParser),_reSettings, _logger);
             _actionFactory = new ActionFactory(GetActionRegistry(_reSettings));
 
-            _reSettings.CustomTypes = _reSettings.CustomTypes.Concat(new[] {
-                typeof(BuiltInCustomTypes)
-            }).ToArray();
+            var builtInts = new[] {typeof(BuiltInCustomTypes)};
+            
+            _reSettings.CustomTypes = _reSettings.CustomTypes?.Concat(builtInts).ToArray() ?? builtInts;
         }
 
         private IDictionary<string, Func<ActionBase>> GetActionRegistry(ReSettings reSettings)
@@ -253,7 +253,7 @@ namespace RulesEngine
 
                 // Decide on execution order
                 var result = new List<RuleResultTree>();
-                var rules = workflow.Rules.ToList();
+                var rules = workflow.Rules.Where(r => r.Enabled).ToList();
 
                 var intermediateParams = new List<ScopedParam>();
 
@@ -263,7 +263,9 @@ namespace RulesEngine
                     {
                         var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParams);
 
-                        var compiledRule = _rulesCache.GetCompiledRules(compiledRulesCacheKey)?[rule.RuleName];
+                        Console.WriteLine($"Looking for {rule.RuleName}");
+                        
+                        var compiledRule = _rulesCache.GetCompiledRules(compiledRulesCacheKey)[rule.RuleName];
 
                         if (compiledRule == null)
                         {
@@ -277,16 +279,16 @@ namespace RulesEngine
                         var res = compiledRule(ruleParams);
 
                         if (Enum.TryParse(rule.Operator, out ExpressionType nestedOperator) &&
-                            nestedOperator == ExpressionType.ExclusiveOr && res.IsSuccess)
+                            nestedOperator == ExpressionType.ExclusiveOr && res.IsSuccess && !string.IsNullOrEmpty(res.PromotedValue))
                         {
                             intermediateParams.Add(new ScopedParam {
-                                Name = res.Rule.RuleName, Expression = res.PromotedEvent
+                                Name = res.Rule.RuleName, Expression = res.PromotedValue
                             });
                         }
-                        else if (res.IsSuccess)
+                        else if (res.IsSuccess && !string.IsNullOrEmpty(res.Rule.Value))
                         {
                             intermediateParams.Add(new ScopedParam {
-                                Name = res.Rule.RuleName, Expression = res.Rule.SuccessEvent
+                                Name = res.Rule.RuleName, Expression = res.Rule.Value
                             });
                         }
 
@@ -329,14 +331,12 @@ namespace RulesEngine
             {
                 var dictFunc = new Dictionary<string, RuleFunc<RuleResultTree>>();
 
-                if (rule.Enabled)
-                {
-                    var combined = workflow.GlobalParams?.Concat(intermediateParams).ToArray() ??
+
+                var combined = workflow.GlobalParams?.Concat(intermediateParams).ToArray() ??
                                    intermediateParams.ToArray();
-
-                    dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, combined));
-                }
-
+                
+                dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, combined));
+                
                 _rulesCache.AddOrUpdateCompiledRule(compileRulesKey, dictFunc);
                 _logger.LogTrace($"Rules has been compiled for the {workflowName} workflow and added to dictionary");
                 return true;

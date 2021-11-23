@@ -30,7 +30,10 @@ namespace RulesEngine.Models
         /// </value>
         public bool IsSuccess { get; set; }
 
-        public string PromotedEvent { get; set; }
+        /// <summary>
+        /// A value is promoted when the rule has operator of type "ExclusiveOr"
+        /// </summary>
+        public string PromotedValue { get; set; }
         
         /// <summary>
         /// Gets or sets the child result.

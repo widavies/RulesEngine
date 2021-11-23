@@ -15,7 +15,7 @@ namespace RulesEngine.HelperFunctions
     /// </summary>
     internal static class Helpers
     {
-        internal static RuleFunc<RuleResultTree> ToResultTree(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], bool> isSuccessFunc, string exceptionMessage = "", string promotedEvent = null)
+        internal static RuleFunc<RuleResultTree> ToResultTree(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], bool> isSuccessFunc, string exceptionMessage = "", string promotedValue = null)
         {
             return (inputs) => {
 
@@ -37,7 +37,7 @@ namespace RulesEngine.HelperFunctions
                     Rule = rule,
                     Inputs = inputsDict,
                     IsSuccess = isSuccess,
-                    PromotedEvent = promotedEvent,
+                    PromotedValue = promotedValue,
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage,
                 };
