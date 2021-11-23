@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RulesEngine.Actions;
+using RulesEngine.CustomTypes;
 using RulesEngine.Exceptions;
 using RulesEngine.ExpressionBuilders;
 using RulesEngine.Interfaces;
@@ -55,6 +56,10 @@ namespace RulesEngine
             _ruleExpressionParser = new RuleExpressionParser(_reSettings);
             _ruleCompiler = new RuleCompiler(new RuleExpressionBuilderFactory(_reSettings, _ruleExpressionParser),_reSettings, _logger);
             _actionFactory = new ActionFactory(GetActionRegistry(_reSettings));
+
+            _reSettings.CustomTypes = _reSettings.CustomTypes.Concat(new[] {
+                typeof(BuiltInCustomTypes)
+            }).ToArray();
         }
 
         private IDictionary<string, Func<ActionBase>> GetActionRegistry(ReSettings reSettings)

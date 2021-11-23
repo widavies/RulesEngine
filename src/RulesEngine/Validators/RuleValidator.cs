@@ -41,6 +41,14 @@ namespace RulesEngine.Validators
                 RuleFor(c => c.Expression).NotEmpty().WithMessage(Constants.LAMBDA_EXPRESSION_EXPRESSION_NULL_ERRMSG);
                 RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
             });
+            When(c => c.Operator == null && c.RuleExpressionType == RuleExpressionType.RegexExpression, () => {
+                RuleFor(c => c.Expression).NotEmpty().WithMessage(Constants.REGEX_EXPRESSION_EXPRESSION_NULL_ERRMSG);
+                RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
+            });
+            When(c => c.Operator == null && c.RuleExpressionType == RuleExpressionType.RegexCasedExpression, () => {
+                RuleFor(c => c.Expression).NotEmpty().WithMessage(Constants.REGEX_EXPRESSION_CASED_EXPRESSION_NULL_ERRMSG);
+                RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
+            });
         }
 
         private bool BeValidRulesList(IEnumerable<Rule> rules)
