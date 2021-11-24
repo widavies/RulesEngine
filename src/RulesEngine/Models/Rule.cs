@@ -54,6 +54,11 @@ namespace RulesEngine.Models
         public RuleActions Actions { get; set; }
         public string SuccessEvent { get; set; }
         public string Value { get; set; }
+        /// <summary>
+        /// Only used when <see cref="Operator"/> is set to "ExclusiveOr" and
+        /// no child rules evaluate to true
+        /// </summary>
+        public string DefaultValue { get; set; }
 
     }
 }

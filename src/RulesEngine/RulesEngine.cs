@@ -263,8 +263,6 @@ namespace RulesEngine
                     {
                         var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParams);
 
-                        Console.WriteLine($"Looking for {rule.RuleName}");
-                        
                         var compiledRule = _rulesCache.GetCompiledRules(compiledRulesCacheKey)[rule.RuleName];
 
                         if (compiledRule == null)
@@ -277,22 +275,20 @@ namespace RulesEngine
                         }
 
                         var res = compiledRule(ruleParams);
-
-                        if (Enum.TryParse(rule.Operator, out ExpressionType nestedOperator) &&
-                            nestedOperator == ExpressionType.ExclusiveOr && res.IsSuccess && !string.IsNullOrEmpty(res.PromotedValue))
+                        result.Add(res);
+                        
+                        if (res.IsSuccess && Enum.TryParse(rule.Operator, out ExpressionType nestedOperator) &&
+                            nestedOperator == ExpressionType.ExclusiveOr)
                         {
                             intermediateParams.Add(new ScopedParam {
-                                Name = res.Rule.RuleName, Expression = res.PromotedValue
-                            });
-                        }
-                        else if (res.IsSuccess && !string.IsNullOrEmpty(res.Rule.Value))
+                                    Name = res.Rule.RuleName, Expression = res.PromotedValue
+                                });
+                        } else if (res.IsSuccess && !string.IsNullOrEmpty(res.Rule.Value))
                         {
                             intermediateParams.Add(new ScopedParam {
                                 Name = res.Rule.RuleName, Expression = res.Rule.Value
                             });
                         }
-
-                        result.Add(res);
                     }
                     else
                     {
@@ -369,27 +365,27 @@ namespace RulesEngine
         }
 
 
-        /// <summary>
-        /// This will execute the compiled rules 
-        /// </summary>
-        /// <param name="workflowName"></param>
-        /// <param name="ruleParams"></param>
-        /// <returns>list of rule result set</returns>
-        private List<RuleResultTree> ExecuteAllRuleByWorkflow(string workflowName, RuleParameter[] ruleParameters)
-        {
-            _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
-
-            var result = new List<RuleResultTree>();
-            var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParameters);
-            foreach (var compiledRule in _rulesCache.GetCompiledRules(compiledRulesCacheKey)?.Values)
-            {
-                var resultTree = compiledRule(ruleParameters);
-                result.Add(resultTree);
-            }
-
-            FormatErrorMessages(result);
-            return result;
-        }
+        // /// <summary>
+        // /// This will execute the compiled rules 
+        // /// </summary>
+        // /// <param name="workflowName"></param>
+        // /// <param name="ruleParams"></param>
+        // /// <returns>list of rule result set</returns>
+        // private List<RuleResultTree> ExecuteAllRuleByWorkflow(string workflowName, RuleParameter[] ruleParameters)
+        // {
+        //     _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
+        //
+        //     var result = new List<RuleResultTree>();
+        //     var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParameters);
+        //     foreach (var compiledRule in _rulesCache.GetCompiledRules(compiledRulesCacheKey)?.Values)
+        //     {
+        //         var resultTree = compiledRule(ruleParameters);
+        //         result.Add(resultTree);
+        //     }
+        //
+        //     FormatErrorMessages(result);
+        //     return result;
+        // }
 
         private string GetCompiledRulesKey(string workflowName, RuleParameter[] ruleParams)
         {

@@ -191,10 +191,20 @@ namespace RulesEngine
 
                 var childRuleResults = resultList as RuleResultTree[] ?? resultList.ToArray();
 
-                var successValue = operation == ExpressionType.ExclusiveOr && isSuccess
-                    ? childRuleResults.FirstOrDefault(x => x.IsSuccess)?.Rule.Value
-                    : null;
-                
+                string successValue = null;
+
+                if (operation == ExpressionType.ExclusiveOr)
+                {
+                    if (isSuccess)
+                    {
+                        successValue = childRuleResults.FirstOrDefault(x => x.IsSuccess)?.Rule.Value;
+                    } else if (!string.IsNullOrEmpty(parentRule.DefaultValue))
+                    {
+                        successValue = parentRule.DefaultValue;
+                        isSuccessFn = (p) => true;
+                    }
+                }
+
                 var result = Helpers.ToResultTree(_reSettings, parentRule, childRuleResults, isSuccessFn, "", successValue);
                 
                 return result(paramArray);
