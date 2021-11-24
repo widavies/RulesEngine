@@ -10,6 +10,7 @@ using RulesEngine.Actions;
 using RulesEngine.CustomTypes;
 using RulesEngine.Exceptions;
 using RulesEngine.ExpressionBuilders;
+using RulesEngine.HelperFunctions;
 using RulesEngine.Interfaces;
 using RulesEngine.Models;
 using RulesEngine.Validators;
@@ -238,6 +239,71 @@ namespace RulesEngine
         }
 
         /// <summary>
+        /// Some rules reference other rules. Rules are executed one by one.
+        /// This function determines what that order is. If there is
+        /// no possible execution plan (a circular dependency exists),
+        /// an exception is thrown.
+        ///
+        /// There is one primary restriction here - only top level rules may be referenced.
+        /// This is because all the sub ruled are executed immediately and there isn't yet a feature
+        /// to execute them one by one, as would be needed to do otherwise.
+        /// </summary>
+        /// <param name="rules">A list of user provided rules that may be inter-depended and need to be executed.</param>
+        /// <returns></returns>
+        private List<Rule> CreateExecutionPlan(IEnumerable<Rule> rules)
+        {
+            var enumerable = rules as Rule[] ?? rules.ToArray();
+            var graph = new Graph<string, Rule>();
+            
+            var keys = enumerable.Select(x => x.RuleName).ToList();
+            
+            foreach (var rule in enumerable)
+            {
+                // Determine the dependencies of a node by what nodes it references.
+                // A node is considered to reference another if its Expression or any of its children's Expressions
+                // contain the unescaped rule name of another
+
+                var dependencies = new List<string>();
+
+                var exploring = new Queue<Rule>();
+                exploring.Enqueue(rule);
+
+                while (exploring.Count != 0)
+                {
+                    var node = exploring.Dequeue();
+
+                    if (node.Expression != null)
+                    {
+                        dependencies.AddRange(keys.Where(key => 
+                            // Regex checks for unescaped (not-quoted) variable names referencing the rule
+                            Regex.IsMatch(node.Expression, $@"(?<!\w+){key}(?!\w+)(?=([^""\\]*(\\.|""([^""\\]*\\.)*[^""\\]*""))*[^""]*$)")));    
+                    }
+                    
+                    if (node.Rules != null)
+                    {
+                        foreach (var child in node.Rules)
+                        {
+                            exploring.Enqueue(child);
+                        }
+                    }
+                }
+                
+                graph.AddNode(rule.RuleName, rule, dependencies);
+            }
+
+            var executionOrder = new List<Rule>();
+            
+            // From here, use the graph to decide execution order
+            var result = graph.TopologicalSort();
+            foreach (var layer in result.layers)
+            {
+                executionOrder.AddRange(layer.Select(x => graph[x]));
+            }
+            
+            return executionOrder;
+        }
+        
+        /// <summary>
         /// This will validate workflow rules then call execute method
         /// </summary>
         /// <typeparam name="T">type of entity</typeparam>
@@ -252,8 +318,10 @@ namespace RulesEngine
                 _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
 
                 // Decide on execution order
+                Console.WriteLine();
+                
                 var result = new List<RuleResultTree>();
-                var rules = workflow.Rules.Where(r => r.Enabled).ToList();
+                var rules = CreateExecutionPlan(workflow.Rules.Where(r => r.Enabled));
 
                 var intermediateParams = new List<ScopedParam>();
 
