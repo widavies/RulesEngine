@@ -197,7 +197,10 @@ namespace RulesEngine
                 {
                     if (isSuccess)
                     {
-                        successValue = childRuleResults.FirstOrDefault(x => x.IsSuccess)?.Rule.Value;
+                        var child = childRuleResults.FirstOrDefault(x => x.IsSuccess);
+
+                        successValue = Enum.TryParse(child?.Rule.Operator, out ExpressionType nestedOperator)
+                                       && nestedOperator == ExpressionType.ExclusiveOr ? child?.PromotedValue : child?.Rule.Value;
                     } else if (!string.IsNullOrEmpty(parentRule.DefaultValue))
                     {
                         successValue = parentRule.DefaultValue;
