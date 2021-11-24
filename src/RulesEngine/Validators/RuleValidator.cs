@@ -8,30 +8,52 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace RulesEngine.Validators
 {
     internal class RuleValidator : AbstractValidator<Rule>
     {
-        private readonly List<ExpressionType> _nestedOperators = new List<ExpressionType> { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse, ExpressionType.ExclusiveOr };
+        private readonly List<ExpressionType> _nestedOperators = new List<ExpressionType> {
+            ExpressionType.And,
+            ExpressionType.AndAlso,
+            ExpressionType.Or,
+            ExpressionType.OrElse,
+            ExpressionType.ExclusiveOr
+        };
+
         public RuleValidator()
         {
-            RuleFor(c => c.RuleName).NotEmpty().WithMessage(Constants.RULE_NAME_NULL_ERRMSG);
+            RuleFor(c => c.RuleName).NotNull().NotEmpty()
+                .WithMessage(Constants.RULE_NAME_NULL_ERRMSG).Must(r => Regex.IsMatch(r, "^[a-zA-Z0-9]*$"))
+                .WithMessage(Constants.RULE_NAME_CHARACTERS_ERRMSG);
 
             //Nested expression check
             When(c => c.Operator != null, () => {
                 RuleFor(c => c.Operator)
-                   .NotNull().WithMessage(Constants.OPERATOR_NULL_ERRMSG)
-                   .Must(op => _nestedOperators.Any(x => x.ToString().Equals(op, StringComparison.OrdinalIgnoreCase)))
-                   .WithMessage(Constants.OPERATOR_INCORRECT_ERRMSG);
-
+                    .NotNull().WithMessage(Constants.OPERATOR_NULL_ERRMSG)
+                    .Must(op => _nestedOperators.Any(x => x.ToString().Equals(op, StringComparison.OrdinalIgnoreCase)))
+                    .WithMessage(Constants.OPERATOR_INCORRECT_ERRMSG);
+                When(
+                    c => Enum.TryParse(c.Operator, out ExpressionType nestedOperator) &&
+                         nestedOperator == ExpressionType.ExclusiveOr, () => {
+                        RuleFor(c => c.Value).Null().WithMessage(Constants.VALUE_NOT_SET_EXCLUSIVE_OR_OPERATOR);
+                    });
+                When(
+                    c => Enum.TryParse(c.Operator, out ExpressionType nestedOperator) &&
+                         nestedOperator != ExpressionType.ExclusiveOr, () => {
+                        RuleFor(c => c.DefaultValue).Null().WithMessage(Constants.DEFAULT_VALUE_REQUIRES_EXCLUSIVE_OR);
+                    });
                 When(c => c.Rules?.Any() != true, () => {
-                    RuleFor(c => c.WorkflowsToInject).NotEmpty().WithMessage(Constants.INJECT_WORKFLOW_RULES_ERRMSG);
-                })
-                .Otherwise(() => {
-                    RuleFor(c => c.Rules).Must(BeValidRulesList);
-                });
+                        RuleFor(c => c.WorkflowsToInject).NotEmpty()
+                            .WithMessage(Constants.INJECT_WORKFLOW_RULES_ERRMSG);
+                    })
+                    .Otherwise(() => {
+                        RuleFor(c => c.Rules).Must(BeValidRulesList);
+                    });
             });
+
+
             RegisterExpressionTypeRules();
         }
 
@@ -46,7 +68,8 @@ namespace RulesEngine.Validators
                 RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
             });
             When(c => c.Operator == null && c.RuleExpressionType == RuleExpressionType.RegexCasedExpression, () => {
-                RuleFor(c => c.Expression).NotEmpty().WithMessage(Constants.REGEX_EXPRESSION_CASED_EXPRESSION_NULL_ERRMSG);
+                RuleFor(c => c.Expression).NotEmpty()
+                    .WithMessage(Constants.REGEX_EXPRESSION_CASED_EXPRESSION_NULL_ERRMSG);
                 RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
             });
         }
@@ -61,6 +84,7 @@ namespace RulesEngine.Validators
                 isValid &= validator.Validate(rule).IsValid;
                 if (!isValid) break;
             }
+
             return isValid;
         }
     }
