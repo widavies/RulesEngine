@@ -26,13 +26,13 @@ namespace RulesEngine.Validators
             // -Rule.LocalParams.Name
             // -GlobalParams.Name
             // There may be no duplicates.
-            RuleFor(c => c).Must(workflow =>
-                CheckForDuplicateNames(workflow) == null
-            ).WithMessage(workflow =>
-                $"The name {CheckForDuplicateNames(workflow)} is duplicated. Within a workflow, the set which contains the names of" +
-                " all global parameters, all (including nested) local parameters, and all (including nested)" +
-                " rule names must contain NO duplicates."
-            );
+            // RuleFor(c => c).Must(workflow =>
+            //     CheckForDuplicateNames(workflow) == null
+            // ).WithMessage(workflow =>
+            //     $"The name {CheckForDuplicateNames(workflow)} is duplicated. Within a workflow, the set which contains the names of" +
+            //     " all global parameters, all (including nested) local parameters, and all (including nested)" +
+            //     " rule names must contain NO duplicates."
+            // );
         }
 
         private string CheckForDuplicateNames(Workflow workflow)
