@@ -54,5 +54,25 @@ namespace RulesEngine.Models
         public RuleActions Actions { get; set; }
         public string SuccessEvent { get; set; }
 
+        /// <summary>
+        /// Applies when <see cref="RuleExpressionType"/> is <c>RuleExpressionType.RegexExpression</c>
+        /// or <c>RuleExpressionType.RegexCaptureExpression</c>
+        /// </summary>
+        public bool CaseSensitiveRegex = false;
+        
+        /// <summary>
+        /// Set when <see cref="RuleExpressionType"/> is NOT <c>RuleExpressionType.CaptureExpression</c>
+        /// </summary>
+        public string Description;
+        /// <summary>
+        /// Set when <see cref="RuleExpressionType"/> is <c>RuleExpressionType.CaptureExpression</c>
+        /// </summary>
+        public Dictionary<string, string> Descriptions;
+
+        public Dictionary<string, string> RequiresAll;
+
+        public Dictionary<string, Dictionary<string, string>> Requires;
+
+
     }
 }

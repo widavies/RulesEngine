@@ -8,6 +8,8 @@ namespace RulesEngine.Models
     /// </summary>
     public enum RuleExpressionType
     {
-        LambdaExpression = 0
+        LambdaExpression = 0,
+        RegexExpression = 1,
+        RegexCaptureExpression = 2
     }
 }
