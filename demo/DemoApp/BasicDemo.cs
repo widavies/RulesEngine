@@ -21,14 +21,56 @@ namespace DemoApp
             List<Rule> rules = new List<Rule>();
 
             Rule rule = new Rule();
-            rule.RuleName = "Test Rule";
+            rule.RuleName = "TestRule";
             rule.SuccessEvent = "Count is within tolerance.";
             rule.ErrorMessage = "Over expected.";
-            rule.Expression = "count < 3";
+//            rule.DefaultValue = "19";
+            //rule.Value = "Something";
+            rule.Operator = "ExclusiveOr";
+            rule.Expression = " 1 == 1";
+            
+            //rule.Operator = "ExclusiveOr";
+            
+            rule.Rules = new [] {
+                new Rule {
+                    RuleName = "TestRule",
+                    Operator = "ExclusiveOr",
+                    Rules = new [] {
+                        new Rule {
+                            RuleName = "Grandchild",
+                            Expression = "2 == 1",
+                            Value = "61"
+                        }
+                    },
+                    LocalParams = new[] {
+                        new ScopedParam() {
+                            Name = "TestRule",
+                            Expression = "1==4"
+                        }
+                    }
+                },
+                new Rule {
+                    RuleName = "TestRule",
+                    Expression = "4 == 4",
+                    Value = "13"
+                },
+            };
+            
             rule.RuleExpressionType = RuleExpressionType.LambdaExpression;
 
             rules.Add(rule);
 
+            Rule rule2 = new Rule();
+            rule2.RuleName = "TestRule2";
+            rule2.SuccessEvent = "Count is within tolerance.";
+            rule2.ErrorMessage = "Over expected.";
+            rule2.Expression = "TestRule == 61";
+            rule2.Value = "4";
+
+            rule2.RuleExpressionType = RuleExpressionType.LambdaExpression;
+
+            rules.Add(rule2);
+            
             workflow.Rules = rules;
 
             workflows.Add(workflow);
@@ -37,28 +79,25 @@ namespace DemoApp
 
             dynamic datas = new ExpandoObject();
             datas.count = 1;
-            var inputs = new dynamic[]
+            var inputs = new[]
               {
                     datas
               };
 
             List<RuleResultTree> resultList = bre.ExecuteAllRulesAsync("Test Workflow Rule 1", inputs).Result;
 
-            bool outcome = false;
+            foreach (var res in resultList)
+            {
+                Console.WriteLine($"{res.Rule.RuleName} {res.IsSuccess} {res.PromotedValue} {res.ExceptionMessage}");
 
-            //Different ways to show test results:
-            outcome = resultList.TrueForAll(r => r.IsSuccess);
-
-            resultList.OnSuccess((eventName) => {
-                Console.WriteLine($"Result '{eventName}' is as expected.");
-                outcome = true;
-            });
-
-            resultList.OnFail(() => {
-                outcome = false;
-            });
-
-            Console.WriteLine($"Test outcome: {outcome}.");
+                if (res.ChildResults == null) continue;
+                
+                
+                foreach (var child in res.ChildResults)
+                {
+                    Console.WriteLine($"\t\t{child.Rule.RuleName} {res.Rule.Value} {child.IsSuccess}");
+                }
+            }
         }
     }
 }
