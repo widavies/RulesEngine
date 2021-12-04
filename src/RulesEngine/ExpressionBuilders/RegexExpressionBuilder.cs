@@ -41,7 +41,7 @@ namespace RulesEngine.ExpressionBuilders
                 }
 
                 var ruleDelegate = _ruleExpressionParser.Compile<bool>(
-                    $"BuiltInCustomTypes.RegexMatchCaseInsensitive({first.Name}, \"{Utils.ReplaceConcatShorthand(rule.Expression)}\")", ruleParams);
+                    $"BuiltInCustomTypes.RegexMatchCaseInsensitive({first.Name}, \"^{Utils.ReplaceConcatShorthand(rule.Expression)}\")", ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)

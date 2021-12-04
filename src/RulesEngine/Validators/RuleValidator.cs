@@ -34,16 +34,16 @@ namespace RulesEngine.Validators
                     .NotNull().WithMessage(Constants.OPERATOR_NULL_ERRMSG)
                     .Must(op => _nestedOperators.Any(x => x.ToString().Equals(op, StringComparison.OrdinalIgnoreCase)))
                     .WithMessage(Constants.OPERATOR_INCORRECT_ERRMSG);
-                // When(
-                //     c => Enum.TryParse(c.Operator, out ExpressionType nestedOperator) &&
-                //          nestedOperator == ExpressionType.ExclusiveOr, () => {
-                //         RuleFor(c => c.Value).Null().WithMessage(Constants.VALUE_NOT_SET_EXCLUSIVE_OR_OPERATOR);
-                //     });
-                // When(
-                //     c => Enum.TryParse(c.Operator, out ExpressionType nestedOperator) &&
-                //          nestedOperator != ExpressionType.ExclusiveOr, () => {
-                //         RuleFor(c => c.DefaultValue).Null().WithMessage(Constants.DEFAULT_VALUE_REQUIRES_EXCLUSIVE_OR);
-                //     });
+                When(
+                    c => Enum.TryParse(c.Operator, out ExpressionType nestedOperator) &&
+                         nestedOperator == ExpressionType.ExclusiveOr, () => {
+                        RuleFor(c => c.Value).Null().WithMessage(Constants.VALUE_NOT_SET_EXCLUSIVE_OR_OPERATOR);
+                    });
+                When(
+                    c => Enum.TryParse(c.Operator, out ExpressionType nestedOperator) &&
+                         nestedOperator != ExpressionType.ExclusiveOr, () => {
+                        RuleFor(c => c.DefaultValue).Null().WithMessage(Constants.DEFAULT_VALUE_REQUIRES_EXCLUSIVE_OR);
+                    });
                 When(c => c.Rules?.Any() != true, () => {
                         RuleFor(c => c.WorkflowsToInject).NotEmpty()
                             .WithMessage(Constants.INJECT_WORKFLOW_RULES_ERRMSG);

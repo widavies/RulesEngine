@@ -77,7 +77,7 @@ namespace RulesEngine.ExpressionBuilders
                 }
 
                 return _ruleExpressionParser.Parse(
-                    $"BuiltInCustomTypes.RegexMatchCaseSensitive({first.Name}, \"{Utils.ReplaceConcatShorthand(expression)}\")", parameters,
+                    $"BuiltInCustomTypes.RegexMatchCaseSensitive({first.Name}, \"^{Utils.ReplaceConcatShorthand(expression)}\")", parameters,
                     returnType);
             }
             catch (ParseException ex)
