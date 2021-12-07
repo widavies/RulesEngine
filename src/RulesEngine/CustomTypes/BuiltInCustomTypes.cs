@@ -16,5 +16,14 @@ namespace RulesEngine.CustomTypes
         {
             return Regex.IsMatch(input, pattern);
         }
+
+        public static (bool, string) RegexCaptureCaseInsensitive(string input, string pattern)
+        {
+            var match = Regex.Match(input, pattern);
+
+            var success = match.Success && match.Groups.Count > 0;
+            
+            return (success, success ? match.Groups[1].Value : null);
+        }
     }
 }

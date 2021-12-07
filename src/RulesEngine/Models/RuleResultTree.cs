@@ -46,6 +46,12 @@ namespace RulesEngine.Models
         public ActionResult ActionResult { get; set; }
 
         /// <summary>
+        /// Set to the value of the first regex capture group if
+        /// the evaluated rule was a RegexCaptureExpression
+        /// </summary>
+        public string RegexCapture { get; set; }
+        
+        /// <summary>
         /// Gets the exception message in case an error is thrown during rules calculation.
         /// </summary>
         public string ExceptionMessage { get; set; }
