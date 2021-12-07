@@ -179,7 +179,7 @@ namespace RulesEngine.HelperFunctions
                 var rest = expression.Substring(match.Index + match.Length);
                 
                 return ParseStringConstant(expression.Substring(0, match.Index)) +
-                       Regex.Replace(match.Value, $"({PatternUnescaped("<")}|{PatternUnescaped(">")})", "")
+                       Regex.Replace(match.Value, $"({PatternUnescaped("<")}|{PatternUnescaped(">")})", "").Trim()
                        + ".MatchedRegex" + (rest.Length > 0 ? "," : "")
                        + ExpandReferenceRecursively(expression.Substring(match.Index + match.Length));
             }
@@ -191,7 +191,7 @@ namespace RulesEngine.HelperFunctions
                 var rest = expression.Substring(match.Index + match.Length);
                 
                 return ParseStringConstant(expression.Substring(0, match.Index)) +
-                       Regex.Replace(match.Value, $"({PatternUnescaped("%")}|{PatternUnescaped("%")})", "")
+                       Regex.Replace(match.Value, $"({PatternUnescaped("%")}|{PatternUnescaped("%")})", "").Trim()
                        + ".Name" + (rest.Length > 0 ? "," : "")
                        + ExpandReferenceRecursively(rest);
             }
