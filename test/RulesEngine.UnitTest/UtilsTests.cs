@@ -88,6 +88,19 @@ namespace RulesEngine.UnitTest
 
         }
 
+        [Fact]
+        public void ExpressionExpansion()
+        {
+            // Valid expressions
+            const string expr1 = "<test>%test%test";
+            const string expr2 = "<test><test>\\<test\\>";
+            const string expr3 = "<(test)>";
+            
+            Assert.Equal("string.Concat(test.MatchedRegex,test.Name,\"test\",\"\")", Utils.ExpandReferences(expr1));
+            Assert.Equal("string.Concat(test.MatchedRegex,test.MatchedRegex,\"<test>\",\"\")", Utils.ExpandReferences(expr2));
+            Assert.Equal("string.Concat(\"<(test)>\",\"\")", Utils.ExpandReferences(expr3));
+        }
+
 
     }
 }
