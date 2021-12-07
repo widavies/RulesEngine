@@ -52,6 +52,12 @@ namespace RulesEngine.Models
         public string RegexCapture { get; set; }
         
         /// <summary>
+        /// Set to the regex that the expression matched if
+        /// evaluated rule was a RegexExpression
+        /// </summary>
+        public string RegexMatched { get; set; }
+        
+        /// <summary>
         /// Gets the exception message in case an error is thrown during rules calculation.
         /// </summary>
         public string ExceptionMessage { get; set; }

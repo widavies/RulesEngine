@@ -56,7 +56,7 @@ namespace RulesEngine.ExpressionBuilders
                     return $"BuiltInCustomTypes.RegexMatchCaseInsensitive({first.Name}, {expression})";
                 }
 
-                var ruleDelegate = _ruleExpressionParser.Compile<bool>(
+                var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string>>(
                     ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
             }

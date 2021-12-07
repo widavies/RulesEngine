@@ -50,7 +50,7 @@ namespace RulesEngine.ExpressionBuilders
                     return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expression})";
                 }
 
-                var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string>>(
+                var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string, string>>(
                     ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
             }

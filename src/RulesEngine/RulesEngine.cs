@@ -10,12 +10,14 @@ using RulesEngine.Actions;
 using RulesEngine.CustomTypes;
 using RulesEngine.Exceptions;
 using RulesEngine.ExpressionBuilders;
+using RulesEngine.HelperFunctions;
 using RulesEngine.Interfaces;
 using RulesEngine.Models;
 using RulesEngine.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -245,7 +247,71 @@ namespace RulesEngine
                 _rulesCache.Remove(workflowName);
             }
         }
+ /// <summary>
+        /// Some rules reference other rules. Rules are executed one by one.
+        /// This function determines what that order is. If there is
+        /// no possible execution plan (a circular dependency exists),
+        /// an exception is thrown.
+        ///
+        /// There is one primary restriction here - only top level rules may be referenced.
+        /// This is because all the sub ruled are executed immediately and there isn't yet a feature
+        /// to execute them one by one, as would be needed to do otherwise.
+        /// </summary>
+        /// <param name="rules">A list of user provided rules that may be inter-depended and need to be executed.</param>
+        /// <returns></returns>
+        private List<Rule> CreateExecutionPlan(IEnumerable<Rule> rules)
+        {
+            var enumerable = rules as Rule[] ?? rules.ToArray();
+            var graph = new Graph<string, Rule>();
+            
+            var keys = enumerable.Select(x => x.RuleName).ToList();
+            
+            foreach (var rule in enumerable)
+            {
+                // Determine the dependencies of a node by what nodes it references.
+                // A node is considered to reference another if its Expression or any of its children's Expressions
+                // contain the unescaped rule name of another
 
+                var dependencies = new List<string>();
+
+                var exploring = new Queue<Rule>();
+                exploring.Enqueue(rule);
+
+                while (exploring.Count != 0)
+                {
+                    var node = exploring.Dequeue();
+
+                    if (node.Expression != null)
+                    {
+                        dependencies.AddRange(keys.Where(key =>
+                            // Regex checks for unescaped (not-quoted) variable names referencing the rule
+                            Utils.References(node.Expression, key)));
+                    }
+                    
+                    if (node.Rules != null)
+                    {
+                        foreach (var child in node.Rules)
+                        {
+                            exploring.Enqueue(child);
+                        }
+                    }
+                }
+                
+                graph.AddNode(rule.RuleName, rule, dependencies);
+            }
+
+            var executionOrder = new List<Rule>();
+            
+            // From here, use the graph to decide execution order
+            var result = graph.TopologicalSort();
+            foreach (var layer in result.layers)
+            {
+                executionOrder.AddRange(layer.Select(x => graph[x]));
+            }
+            
+            return executionOrder;
+        }
+        
         /// <summary>
         /// This will validate workflow rules then call execute method
         /// </summary>
@@ -255,19 +321,93 @@ namespace RulesEngine
         /// <returns>list of rule result set</returns>
         private List<RuleResultTree> ValidateWorkflowAndExecuteRule(string workflowName, RuleParameter[] ruleParams)
         {
-            List<RuleResultTree> result;
-
-            if (RegisterRule(workflowName, ruleParams))
+            var workflow = _rulesCache.GetWorkflow(workflowName);
+            if (workflow != null)
             {
-                result = ExecuteAllRuleByWorkflow(workflowName, ruleParams);
+                _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
+
+                // Decide on execution order
+                Console.WriteLine();
+                
+                var result = new List<RuleResultTree>();
+                var rules = CreateExecutionPlan(workflow.Rules.Where(r => r.Enabled));
+
+                var intermediateParams = new List<ScopedParam>();
+
+                foreach (var rule in rules)
+                {
+                    if (RegisterRule(workflowName, rule, intermediateParams.ToArray(), ruleParams))
+                    {
+                        var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParams);
+
+                        var compiledRule = _rulesCache.GetCompiledRules(compiledRulesCacheKey)[rule.RuleName];
+
+                        if (compiledRule == null)
+                        {
+                            _logger.LogTrace("Workflow {Workflow}, Rule {RuleName} was not compiled", workflowName,
+                                rule.RuleName);
+                            // if rules are not registered with Rules Engine
+                            throw new ArgumentException(
+                                $"Workflow {workflowName}, Rule {rule.RuleName} was not compiled");
+                        }
+
+                        var res = compiledRule(ruleParams);
+                        result.Add(res);
+                        
+                        if (res.IsSuccess && Enum.TryParse(rule.Operator, out ExpressionType nestedOperator) &&
+                            nestedOperator == ExpressionType.ExclusiveOr)
+                        {
+                            // If the rule executed was an ExclusiveOr rule, add 
+
+                            // Get the child rule that executed successfully. We'll call this the "winner"
+                            // Because this an ExclusiveOr, there is exactly one winner or the rule fails.
+                            var child = res.ChildResults.FirstOrDefault(x => x.IsSuccess);
+
+                            if (child == null)
+                            {
+                                throw new Exception("ExclusiveOr: No child evaluated to true.");
+                            }
+
+                            // Make the rule name of the winner available
+                            if (child.RegexCapture != null)
+                            {
+                                intermediateParams.Add(new ScopedParam {
+                                    Name = $"{res.Rule.RuleName}.Name", Expression = child.RegexCapture
+                                });
+                            }
+                            else
+                            {
+                                intermediateParams.Add(new ScopedParam {
+                                    Name = $"{res.Rule.RuleName}.Name", Expression = child.Rule.RuleName
+                                });
+                            }
+                            
+                            // If the winner was regex related, make the string it matched available
+                            if (child.RegexMatched != null)
+                            {
+                                intermediateParams.Add(new ScopedParam {
+                                    Name = $"{res.Rule.RuleName}.MatchedRegex", Expression = res.RegexMatched
+                                });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogTrace($"Rule config file is not present for the {workflowName} workflow");
+                        // if rules are not registered with Rules Engine
+                        throw new ArgumentException($"Rule config file is not present for the {workflowName} workflow");
+                    }
+                }
+
+                FormatErrorMessages(result);
+                return result;
             }
             else
             {
-                _logger.LogTrace($"Rule config file is not present for the {workflowName} workflow");
+                _logger.LogTrace($"Workflow {workflowName} not found");
                 // if rules are not registered with Rules Engine
-                throw new ArgumentException($"Rule config file is not present for the {workflowName} workflow");
+                throw new ArgumentException($"Workflow {workflowName} not found");
             }
-            return result;
         }
 
         /// <summary>
@@ -278,23 +418,22 @@ namespace RulesEngine
         /// <returns>
         /// bool result
         /// </returns>
-        private bool RegisterRule(string workflowName, params RuleParameter[] ruleParams)
+        private bool RegisterRule(string workflowName, Rule rule, ScopedParam[] intermediateParams,
+            params RuleParameter[] ruleParams)
         {
             var compileRulesKey = GetCompiledRulesKey(workflowName, ruleParams);
-            if (_rulesCache.AreCompiledRulesUpToDate(compileRulesKey, workflowName))
-            {
-                return true;
-            }
 
             var workflow = _rulesCache.GetWorkflow(workflowName);
             if (workflow != null)
             {
                 var dictFunc = new Dictionary<string, RuleFunc<RuleResultTree>>();
-                foreach (var rule in workflow.Rules.Where(c => c.Enabled))
-                {
-                    dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, workflow.GlobalParams?.ToArray()));
-                }
 
+
+                var combined = workflow.GlobalParams?.Concat(intermediateParams).ToArray() ??
+                                   intermediateParams.ToArray();
+                
+                dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, combined));
+                
                 _rulesCache.AddOrUpdateCompiledRule(compileRulesKey, dictFunc);
                 _logger.LogTrace($"Rules has been compiled for the {workflowName} workflow and added to dictionary");
                 return true;
@@ -327,28 +466,27 @@ namespace RulesEngine
         }
 
 
-
-        /// <summary>
-        /// This will execute the compiled rules 
-        /// </summary>
-        /// <param name="workflowName"></param>
-        /// <param name="ruleParams"></param>
-        /// <returns>list of rule result set</returns>
-        private List<RuleResultTree> ExecuteAllRuleByWorkflow(string workflowName, RuleParameter[] ruleParameters)
-        {
-            _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
-
-            var result = new List<RuleResultTree>();
-            var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParameters);
-            foreach (var compiledRule in _rulesCache.GetCompiledRules(compiledRulesCacheKey)?.Values)
-            {
-                var resultTree = compiledRule(ruleParameters);
-                result.Add(resultTree);
-            }
-
-            FormatErrorMessages(result);
-            return result;
-        }
+        // /// <summary>
+        // /// This will execute the compiled rules 
+        // /// </summary>
+        // /// <param name="workflowName"></param>
+        // /// <param name="ruleParams"></param>
+        // /// <returns>list of rule result set</returns>
+        // private List<RuleResultTree> ExecuteAllRuleByWorkflow(string workflowName, RuleParameter[] ruleParameters)
+        // {
+        //     _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
+        //
+        //     var result = new List<RuleResultTree>();
+        //     var compiledRulesCacheKey = GetCompiledRulesKey(workflowName, ruleParameters);
+        //     foreach (var compiledRule in _rulesCache.GetCompiledRules(compiledRulesCacheKey)?.Values)
+        //     {
+        //         var resultTree = compiledRule(ruleParameters);
+        //         result.Add(resultTree);
+        //     }
+        //
+        //     FormatErrorMessages(result);
+        //     return result;
+        // }
 
         private string GetCompiledRulesKey(string workflowName, RuleParameter[] ruleParams)
         {

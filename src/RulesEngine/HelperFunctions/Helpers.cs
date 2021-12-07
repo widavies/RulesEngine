@@ -49,6 +49,43 @@ namespace RulesEngine.HelperFunctions
             return (inputs) => {
 
                 bool isSuccess;
+                string regexMatched;
+                var inputsDict = new Dictionary<string, object>();
+                try
+                {
+                    inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
+
+                    var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
+                    
+                    isSuccess = res.Item1;
+                    regexMatched = res.Item2;
+                }
+                catch (Exception ex)
+                {
+                    exceptionMessage = GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}", reSettings);
+                    HandleRuleException(new RuleException(exceptionMessage,ex), rule, reSettings);
+                    isSuccess = false;
+                    regexMatched = null;
+                }
+
+                return new RuleResultTree {
+                    Rule = rule,
+                    Inputs = inputsDict,
+                    IsSuccess = isSuccess,
+                    RegexMatched = regexMatched,
+                    ChildResults = childRuleResults,
+                    ExceptionMessage = exceptionMessage
+                };
+
+            };
+        }
+
+        internal static RuleFunc<RuleResultTree> ToResultTree(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], Tuple<bool, string, string>> isSuccessFunc, string exceptionMessage = "")
+        {
+            return (inputs) => {
+
+                bool isSuccess;
+                string regexMatched;
                 string regexCapture;
                 var inputsDict = new Dictionary<string, object>();
                 try
@@ -58,13 +95,15 @@ namespace RulesEngine.HelperFunctions
                     var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
                     
                     isSuccess = res.Item1;
-                    regexCapture = res.Item2;
+                    regexMatched = res.Item2;
+                    regexCapture = res.Item3;
                 }
                 catch (Exception ex)
                 {
                     exceptionMessage = GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}", reSettings);
                     HandleRuleException(new RuleException(exceptionMessage,ex), rule, reSettings);
                     isSuccess = false;
+                    regexMatched = null;
                     regexCapture = null;
                 }
 
@@ -72,6 +111,7 @@ namespace RulesEngine.HelperFunctions
                     Rule = rule,
                     Inputs = inputsDict,
                     IsSuccess = isSuccess,
+                    RegexMatched = regexMatched,
                     RegexCapture = regexCapture,
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage
@@ -79,7 +119,7 @@ namespace RulesEngine.HelperFunctions
 
             };
         }
-
+        
         internal static RuleFunc<RuleResultTree> ToRuleExceptionResult(ReSettings reSettings, Rule rule,Exception ex)
         {
             HandleRuleException(ex, rule, reSettings);

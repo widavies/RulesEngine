@@ -7,9 +7,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml.Xsl;
 
 namespace RulesEngine.HelperFunctions
 {
@@ -144,15 +142,10 @@ namespace RulesEngine.HelperFunctions
         {
             return $@"(?<!\\)\\(?:\\\\)*{str}";
         }
-
-        private static string PatternEscaped(string left, string center, string right)
-        {
-            return $"{PatternEscaped(left)}{center}{PatternEscaped(right)}";
-        }
-
+        
         private static string PatternUnescaped(string left, string center, string right)
         {
-            return $"{PatternUnescaped(left)}{center}{PatternUnescaped(right)}";
+            return $"{PatternUnescaped(left)}\\s*{center}\\s*{PatternUnescaped(right)}";
         }
 
         private static string ParseStringConstant(string str)
@@ -215,6 +208,20 @@ namespace RulesEngine.HelperFunctions
         {
             // Last bit here assumes there are always at least two arguments to the string concat
             return string.IsNullOrEmpty(expression) ? expression : $"string.Concat({ExpandReferenceRecursively(expression)},\"\")";
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="expression"/> references <paramref name="name"/>
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static bool References(string expression, string name)
+        {
+            var patternRefRegex = PatternUnescaped("<", name, ">");
+            var patternRefName = PatternUnescaped("%", name, "%");
+
+            return Regex.IsMatch(expression, patternRefRegex) || Regex.IsMatch(expression, patternRefName);
         }
     }
 }

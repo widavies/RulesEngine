@@ -22,7 +22,7 @@ namespace RulesEngine
         /// <summary>
         /// The nested operators
         /// </summary>
-        private readonly ExpressionType[] nestedOperators = new ExpressionType[] { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse };
+        private readonly ExpressionType[] nestedOperators = { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse, ExpressionType.ExclusiveOr };
 
         /// <summary>
         /// The expression builder factory
@@ -234,6 +234,10 @@ namespace RulesEngine
                         break;
                 }
                 
+            }
+            if (operation == ExpressionType.ExclusiveOr)
+            {
+                isSuccess = resultList.Count(x => x.IsSuccess) == 1;
             }
             return (isSuccess, resultList);
         }
