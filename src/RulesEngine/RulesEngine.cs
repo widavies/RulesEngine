@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RulesEngine.Actions;
+using RulesEngine.CustomTypes;
 using RulesEngine.Exceptions;
 using RulesEngine.ExpressionBuilders;
 using RulesEngine.Interfaces;
@@ -23,7 +24,7 @@ namespace RulesEngine
     /// <summary>
     /// 
     /// </summary>
-    /// <seealso cref="RulesEngine.Interfaces.IRulesEngine" />
+    /// <seealso cref="IRulesEngine" />
     public class RulesEngine : IRulesEngine
     {
         #region Variables
@@ -55,6 +56,10 @@ namespace RulesEngine
             _ruleExpressionParser = new RuleExpressionParser(_reSettings);
             _ruleCompiler = new RuleCompiler(new RuleExpressionBuilderFactory(_reSettings, _ruleExpressionParser),_reSettings, _logger);
             _actionFactory = new ActionFactory(GetActionRegistry(_reSettings));
+            
+            var builtInTypes = new[] {typeof(BuiltInCustomTypes)};
+            
+            _reSettings.CustomTypes = _reSettings.CustomTypes?.Concat(builtInTypes).ToArray() ?? builtInTypes;
         }
 
         private IDictionary<string, Func<ActionBase>> GetActionRegistry(ReSettings reSettings)
