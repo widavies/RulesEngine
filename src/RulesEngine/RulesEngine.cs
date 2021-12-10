@@ -327,8 +327,6 @@ namespace RulesEngine
                 _logger.LogTrace($"Compiled rules found for {workflowName} workflow and executed");
 
                 // Decide on execution order
-                Console.WriteLine();
-                
                 var result = new List<RuleResultTree>();
                 var rules = CreateExecutionPlan(workflow.Rules.Where(r => r.Enabled));
 
@@ -372,13 +370,13 @@ namespace RulesEngine
                             if (child.RegexCapture != null)
                             {
                                 intermediateParams.Add(new ScopedParam {
-                                    Name = $"{res.Rule.RuleName}.Name", Expression = child.RegexCapture
+                                    Name = $"{res.Rule.RuleName}_Name", Expression = $"\"{child.RegexCapture}\""
                                 });
                             }
                             else
                             {
                                 intermediateParams.Add(new ScopedParam {
-                                    Name = $"{res.Rule.RuleName}.Name", Expression = child.Rule.RuleName
+                                    Name = $"{res.Rule.RuleName}_Name", Expression = $"\"{child.Rule.RuleName}\""
                                 });
                             }
                             
@@ -386,7 +384,7 @@ namespace RulesEngine
                             if (child.RegexMatched != null)
                             {
                                 intermediateParams.Add(new ScopedParam {
-                                    Name = $"{res.Rule.RuleName}.MatchedRegex", Expression = res.RegexMatched
+                                    Name = $"{res.Rule.RuleName}_MatchedRegex", Expression = $"\"{res.RegexMatched}\""
                                 });
                             }
                         }

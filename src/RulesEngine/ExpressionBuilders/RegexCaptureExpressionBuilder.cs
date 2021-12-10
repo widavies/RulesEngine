@@ -49,8 +49,8 @@ namespace RulesEngine.ExpressionBuilders
                     //     $"BuiltInCustomTypes.RegexMatchSensitive({first.Name}, {expression})" :
                     return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expression})";
                 }
-
-                var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string, string>>(
+                
+                var ruleDelegate = _ruleExpressionParser.Compile<ValueTuple<bool, string, string>>(
                     ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
                 return Helpers.ToResultTree2(_reSettings, rule, null, ruleDelegate);
             }
@@ -59,7 +59,7 @@ namespace RulesEngine.ExpressionBuilders
                 Helpers.HandleRuleException(ex, rule, _reSettings);
 
                 var exceptionMessage = Helpers.GetExceptionMessage(
-                    $"Exception while parsing expression `{rule?.Expression}` - {ex.Message}",
+                    $"DException while parsing expression `{rule?.Expression}` - {ex.Message}",
                     _reSettings);
 
                 bool func(object[] param) => false;

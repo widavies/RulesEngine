@@ -42,9 +42,7 @@ namespace RulesEngine.ExpressionBuilders
         }
 
         public Func<object[], T> Compile<T>(string expression, RuleParameter[] ruleParams)
-        {           
-            Console.WriteLine($"COMPILING {expression}");
-            
+        {
             var cacheKey = GetCacheKey(expression, ruleParams, typeof(T));
             return _memoryCache.GetOrCreate(cacheKey, (entry) => {
                 entry.SetSize(1);
@@ -52,7 +50,6 @@ namespace RulesEngine.ExpressionBuilders
             
                 var e = Parse(expression, parameterExpressions, typeof(T));
                 var expressionBody = new List<Expression>() { e.Body };
-                Console.WriteLine($"COMPILING {e.Body}");
                 var wrappedExpression = WrapExpression<T>(expressionBody, parameterExpressions, new ParameterExpression[] { });
                 return wrappedExpression.CompileFast();
             });
@@ -150,7 +147,7 @@ namespace RulesEngine.ExpressionBuilders
 
         private string GetCacheKey(string expression, RuleParameter[] ruleParameters, Type returnType)
         {
-            var paramKey = string.Join("|", ruleParameters.Select(c => c.Name + "_" + c.Type.ToString()));
+            var paramKey = string.Join("|", ruleParameters.Select(c => c.Name + "_" + c.Type));
             var returnTypeKey = returnType?.ToString() ?? "null";
             var combined = $"Expression:{expression}-Params:{paramKey}-ReturnType:{returnTypeKey}";
             return combined;

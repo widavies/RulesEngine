@@ -247,14 +247,14 @@
         "Rules": [
           {
             "RuleExpressionType": "RegexCaptureExpression",
-            "Expression": "{ZCT.MatchedExpr}-([E0-9](107|111|112|119|120|129|130))",
+            "Expression": "<ZCT>-([E0-9](107|111|112|119|120|129|130))",
             "Requires": {
               "BoardType": "SCUF-1HX-50M"
             }
           },
           {
             "RuleExpressionType": "RegexCaptureExpression",
-            "Expression": "{ZCT.MatchedExpr}-([E0-9](128|137|143))",
+            "Expression": "<ZCT>-([E0-9](128|137|143))",
             "Requires": {
               "BoardType": "SCUF-1HX-50R",
               "FrameStyle": "M"
@@ -262,7 +262,7 @@
           },
           {
             "RuleExpressionType": "RegexCaptureExpression",
-            "Expression": "{ZCT.MatchedExpr}-([E0-9](116|127|136|142))",
+            "Expression": "<ZCT>-([E0-9](116|127|136|142))",
             "Requires": {
               "BoardType": "SCUF-1HX-50R",
               "FrameStyle": "N"

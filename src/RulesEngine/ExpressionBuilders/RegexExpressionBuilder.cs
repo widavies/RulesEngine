@@ -55,13 +55,9 @@ namespace RulesEngine.ExpressionBuilders
                     //     $"BuiltInCustomTypes.RegexMatchSensitive({first.Name}, {expression})" :
                     return $"BuiltInCustomTypes.RegexMatchCaseInsensitive({first.Name}, {expression})";
                 }
-
-                var temp = ApplyRegexMatch(Utils.ExpandReferences(rule.Expression));
                 
-                Console.WriteLine($"APPLIED {temp}");
-                
-                var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string>>(
-                    temp, ruleParams);
+                var ruleDelegate = _ruleExpressionParser.Compile<ValueTuple<bool, string>>(
+                    ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
                 return Helpers.ToResultTree1(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)

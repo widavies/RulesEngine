@@ -10,10 +10,8 @@ namespace RulesEngine.CustomTypes
         public static (bool, string) RegexMatchCaseInsensitive(string input, string pattern)
         {
             var match = Regex.Match(input, pattern);
-
-            return (true, "");
             
-            //return (match.Success, match.Success ? match.Value : null);
+            return (match.Success, match.Success ? match.Value : null);
         }
 
         public static (bool, string) RegexMatchCaseSensitive(string input, string pattern)

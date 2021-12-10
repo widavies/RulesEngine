@@ -44,7 +44,7 @@ namespace RulesEngine.HelperFunctions
             };
         }
         
-        internal static RuleFunc<RuleResultTree> ToResultTree1(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], Tuple<bool, string>> isSuccessFunc, string exceptionMessage = "")
+        internal static RuleFunc<RuleResultTree> ToResultTree1(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string>> isSuccessFunc, string exceptionMessage = "")
         {
             return (inputs) => {
 
@@ -56,8 +56,6 @@ namespace RulesEngine.HelperFunctions
                     inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
 
                     var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
-                    
-                    Console.WriteLine($"CHECK SUCCESS {res.Item1}");
                     
                     isSuccess = res.Item1;
                     regexMatched = res.Item2;
@@ -82,7 +80,7 @@ namespace RulesEngine.HelperFunctions
             };
         }
 
-        internal static RuleFunc<RuleResultTree> ToResultTree2(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], Tuple<bool, string, string>> isSuccessFunc, string exceptionMessage = "")
+        internal static RuleFunc<RuleResultTree> ToResultTree2(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string, string>> isSuccessFunc, string exceptionMessage = "")
         {
             return (inputs) => {
 
@@ -95,8 +93,6 @@ namespace RulesEngine.HelperFunctions
                     inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
 
                     var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
-                    
-                    Console.WriteLine($"CHECK SUCCESS {res.Item1}");
                     
                     isSuccess = res.Item1;
                     regexMatched = res.Item2;
