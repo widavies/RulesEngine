@@ -56,12 +56,19 @@ namespace RulesEngine.ExpressionBuilders
                     return $"BuiltInCustomTypes.RegexMatchCaseInsensitive({first.Name}, {expression})";
                 }
 
+                var temp = ApplyRegexMatch(Utils.ExpandReferences(rule.Expression));
+                
+                Console.WriteLine($"APPLIED {temp}");
+                
                 var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string>>(
-                    ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
-                return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
+                    temp, ruleParams);
+                return Helpers.ToResultTree1(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"ERROR {ex.Message} {ex.Data} {ex.StackTrace}");
+                
+                
                 Helpers.HandleRuleException(ex, rule, _reSettings);
 
                 var exceptionMessage = Helpers.GetExceptionMessage(
@@ -92,6 +99,8 @@ namespace RulesEngine.ExpressionBuilders
                         "First (scoped) parameter must be string in order to use RegexExpression");
                 }
 
+                Console.WriteLine($"INCOMING {expression}");
+                
                 string ApplyRegexMatch(string expr)
                 {
                     // return rule.CaseSensitiveRegex ?

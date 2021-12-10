@@ -59,7 +59,7 @@ namespace RulesEngine
             _ruleCompiler = new RuleCompiler(new RuleExpressionBuilderFactory(_reSettings, _ruleExpressionParser),_reSettings, _logger);
             _actionFactory = new ActionFactory(GetActionRegistry(_reSettings));
             
-            var builtInTypes = new[] {typeof(BuiltInCustomTypes)};
+            var builtInTypes = new[] {typeof(BuiltInCustomTypes), typeof(string), typeof(Regex)};
             
             _reSettings.CustomTypes = _reSettings.CustomTypes?.Concat(builtInTypes).ToArray() ?? builtInTypes;
         }
@@ -168,8 +168,8 @@ namespace RulesEngine
         /// <exception cref="RuleValidationException"></exception>
         public void AddWorkflow(params Workflow[] workflows)
         {
-            try
-            {
+            // try
+            // {
                 foreach (var workflow in workflows)
                 {                    
                     var validator = new WorkflowsValidator();
@@ -183,11 +183,11 @@ namespace RulesEngine
                         throw new ValidationException($"Cannot add workflow `{workflow.WorkflowName}` as it already exists. Use `AddOrUpdateWorkflow` to update existing workflow");
                     }
                 }
-            }
-            catch (ValidationException ex)
-            {
-                throw new RuleValidationException(ex.Message, ex.Errors);
-            }
+            // }
+            // catch (ValidationException ex)
+            // {
+            //     throw new RuleValidationException(ex.Message, ex.Errors);
+            // }
         }
 
         /// <summary>
@@ -350,7 +350,7 @@ namespace RulesEngine
                             throw new ArgumentException(
                                 $"Workflow {workflowName}, Rule {rule.RuleName} was not compiled");
                         }
-
+                        
                         var res = compiledRule(ruleParams);
                         result.Add(res);
                         

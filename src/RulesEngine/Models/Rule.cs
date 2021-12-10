@@ -69,9 +69,9 @@ namespace RulesEngine.Models
         /// </summary>
         public Dictionary<string, string> Descriptions;
 
-        public Dictionary<string, string> RequiresAll;
+        public Dictionary<string, string> Requires;
 
-        public Dictionary<string, Dictionary<string, string>> Requires;
+        public Dictionary<string, Dictionary<string, string>> EachRequires;
 
 
     }

@@ -1,0 +1,295 @@
+﻿[
+  {
+    "WorkflowName": "ExtractFeatures",
+    "Rules": [
+      {
+        "RuleName": "Product",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleName": "uF1",
+            "RuleExpressionType": "RegexExpression",
+            "Expression": "^uF1"
+          }
+        ]
+      },
+      {
+        "RuleName": "Board",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleName": "SCUF-1SX-50M",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "SX",
+              "Terminal": "T",
+              "FrameStyle": "A"
+            }
+          },
+          {
+            "RuleName": "SCUF-1SX-100M",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "SX",
+              "Terminal": "T",
+              "FrameStyle": "B"
+            }
+          },
+          {
+            "RuleName": "SCUF-1SX-EXT",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "SX",
+              "Terminal": "L",
+              "FrameStyle": "G|H|I"
+            }
+          },
+          {
+            "RuleName": "SCUF-1HX-50M",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "HX",
+              "Terminal": "T",
+              "FrameStyle": "A"
+            }
+          },
+          {
+            "RuleName": "SCUF-1HX-100M",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "HX",
+              "Terminal": "T",
+              "FrameStyle": "B"
+            }
+          },
+          {
+            "RuleName": "SCUF-1HX-EXT",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "HX",
+              "Terminal": "L",
+              "FrameStyle": "G|H|I"
+            }
+          },
+          {
+            "RuleName": "SCUF-1HX-50R",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "HX",
+              "Terminal": "R",
+              "FrameStyle": "M|N"
+            }
+          },
+          {
+            "RuleName": "SCUF-1HX-4TM",
+            "Expression": "true",
+            "Requires": {
+              "BoardType": "HX",
+              "Terminal": "R",
+              "AmpSize": "8"
+            }
+          }
+        ]
+      },
+      {
+        "RuleName": "BoardType",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<Product>(SX|HX)",
+            "Descriptions": {},
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "Terminal",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<BoardType>(L|T|R)",
+            "Descriptions": {
+              "L": "Lug",
+              "T": "Pluggable terminal block",
+              "R": "Ring terminal"
+            },
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "FrameStyle",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<Terminal>(A|B|E|G|H|I|M|N)",
+            "Descriptions": {},
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "OptionBoard",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<FrameStyle>(0|I|E|N)",
+            "Descriptions": {
+              "0": "None",
+              "I": "Ethernet/IP",
+              "E": "Modbus TCP",
+              "N": "PROFINET"
+            }
+          }
+        ]
+      },
+      {
+        "RuleName": "AmpSize",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<OptionBoard>-0*(8|16|32|50|80|100|130|160|200)-",
+            "Descriptions": {},
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "Performance",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<AmpSize>(S|L|P)",
+            "Descriptions": {
+              "S": "Standard",
+              "L": "Adjustable Current Limit and Current Feedback. With HX: Load Voltage Feedback & Voltage Limit",
+              "P": "High performance (Load Voltage Feedback, True RMS Power Control Current Limit, Power Limit, High Resolution Control Loop)"
+            },
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "IO",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<Performance>(0|1|2|3|4|5|6|7)",
+            "Descriptions": {
+              "0": "None",
+              "1": "Alarm relay",
+              "2": "General Purpose Input, Analog Input Channel 2, Pulse Width Modulation Input",
+              "3": "Alarm Relay and General Purpose Input, Analog Input Channel 2, Pulse Width Modulation",
+              "4": "Isolated I/O",
+              "5": "Isolated I/O with Alarm Relay",
+              "6": "Isolated I/O with Gen. Purpose Input, Analog Input Channel 2, Pulse Width Modulation",
+              "7": "Isolated I/O with Alarm Relay and Gen. Purpose Input, Analog Input Channel 2 / Pulse Width Modulation"
+            },
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "Retransmits",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<IO>(0|R)",
+            "Descriptions": {
+              "0": "None",
+              "R": "Retransmits"
+            },
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "Sync",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<Retransmits>(0|R)",
+            "Descriptions": {
+              "0": "None",
+              "R": "Digital SYNC-GUARD"
+            },
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "ZCT",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "<Sync>(0|Z)",
+            "Descriptions": {
+              "0": "None",
+              "R": "Zero Cross Transformer Mode"
+            },
+            "Requires": {}
+          }
+        ]
+      },
+      {
+        "RuleName": "Config",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "{ZCT.MatchedExpr}-([E0-9](107|111|112|119|120|129|130))",
+            "Requires": {
+              "BoardType": "SCUF-1HX-50M"
+            }
+          },
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "{ZCT.MatchedExpr}-([E0-9](128|137|143))",
+            "Requires": {
+              "BoardType": "SCUF-1HX-50R",
+              "FrameStyle": "M"
+            }
+          },
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "{ZCT.MatchedExpr}-([E0-9](116|127|136|142))",
+            "Requires": {
+              "BoardType": "SCUF-1HX-50R",
+              "FrameStyle": "N"
+            }
+          }
+        ]
+      },
+      {
+        "RuleName": "Special",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "-(SP(1|2|5|6|7|8|9|11|12|14|16|17|23|25|33|48|55|100|1000))$"
+          }
+        ]
+      },
+      {
+        "RuleName": "FuseKit",
+        "Operator": "ExclusiveOr",
+        "Rules": [
+          {
+            "RuleExpressionType": "RegexCaptureExpression",
+            "Expression": "-(F(010|015|020|025|030|035|040|045|050|060|070|080|090|100|125|150|175|200|250|300|350|400))$"
+          }
+        ]
+      }
+    ]
+  }
+]

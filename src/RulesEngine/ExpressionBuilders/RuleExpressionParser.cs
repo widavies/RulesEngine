@@ -43,6 +43,8 @@ namespace RulesEngine.ExpressionBuilders
 
         public Func<object[], T> Compile<T>(string expression, RuleParameter[] ruleParams)
         {           
+            Console.WriteLine($"COMPILING {expression}");
+            
             var cacheKey = GetCacheKey(expression, ruleParams, typeof(T));
             return _memoryCache.GetOrCreate(cacheKey, (entry) => {
                 entry.SetSize(1);
@@ -50,6 +52,7 @@ namespace RulesEngine.ExpressionBuilders
             
                 var e = Parse(expression, parameterExpressions, typeof(T));
                 var expressionBody = new List<Expression>() { e.Body };
+                Console.WriteLine($"COMPILING {e.Body}");
                 var wrappedExpression = WrapExpression<T>(expressionBody, parameterExpressions, new ParameterExpression[] { });
                 return wrappedExpression.CompileFast();
             });

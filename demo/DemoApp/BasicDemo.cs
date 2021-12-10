@@ -37,7 +37,7 @@ namespace DemoApp
 
             dynamic datas = new ExpandoObject();
             datas.count = 1;
-            var inputs = new dynamic[]
+            var inputs = new[]
               {
                     datas
               };

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using FluentValidation;
+using RulesEngine.ExpressionBuilders;
 using RulesEngine.HelperFunctions;
 using RulesEngine.Models;
 using System;
@@ -13,24 +14,34 @@ namespace RulesEngine.Validators
 {
     internal class RuleValidator : AbstractValidator<Rule>
     {
-        private readonly List<ExpressionType> _nestedOperators = new List<ExpressionType> { ExpressionType.And, ExpressionType.AndAlso, ExpressionType.Or, ExpressionType.OrElse };
+        private readonly List<ExpressionType> _nestedOperators = new List<ExpressionType> {
+            ExpressionType.And,
+            ExpressionType.AndAlso,
+            ExpressionType.Or,
+            ExpressionType.OrElse,
+            ExpressionType.ExclusiveOr
+        };
+
         public RuleValidator()
         {
-            RuleFor(c => c.RuleName).NotEmpty().WithMessage(Constants.RULE_NAME_NULL_ERRMSG);
+            RuleFor(c => c)
+                .Must(x => x.RuleExpressionType == RuleExpressionType.RegexCaptureExpression ^ !string.IsNullOrEmpty(x.RuleName))
+                .WithMessage(Constants.RULE_NAME_NULL_ERRMSG);
 
             //Nested expression check
             When(c => c.Operator != null, () => {
                 RuleFor(c => c.Operator)
-                   .NotNull().WithMessage(Constants.OPERATOR_NULL_ERRMSG)
-                   .Must(op => _nestedOperators.Any(x => x.ToString().Equals(op, StringComparison.OrdinalIgnoreCase)))
-                   .WithMessage(Constants.OPERATOR_INCORRECT_ERRMSG);
+                    .NotNull().WithMessage(Constants.OPERATOR_NULL_ERRMSG)
+                    .Must(op => _nestedOperators.Any(x => x.ToString().Equals(op, StringComparison.OrdinalIgnoreCase)))
+                    .WithMessage(Constants.OPERATOR_INCORRECT_ERRMSG);
 
                 When(c => c.Rules?.Any() != true, () => {
-                    RuleFor(c => c.WorkflowsToInject).NotEmpty().WithMessage(Constants.INJECT_WORKFLOW_RULES_ERRMSG);
-                })
-                .Otherwise(() => {
-                    RuleFor(c => c.Rules).Must(BeValidRulesList);
-                });
+                        RuleFor(c => c.WorkflowsToInject).NotEmpty()
+                            .WithMessage(Constants.INJECT_WORKFLOW_RULES_ERRMSG);
+                    })
+                    .Otherwise(() => {
+                        RuleFor(c => c.Rules).Must(BeValidRulesList);
+                    });
             });
             RegisterExpressionTypeRules();
         }
@@ -53,6 +64,7 @@ namespace RulesEngine.Validators
                 isValid &= validator.Validate(rule).IsValid;
                 if (!isValid) break;
             }
+
             return isValid;
         }
     }

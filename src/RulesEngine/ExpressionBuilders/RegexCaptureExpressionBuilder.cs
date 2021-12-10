@@ -52,7 +52,7 @@ namespace RulesEngine.ExpressionBuilders
 
                 var ruleDelegate = _ruleExpressionParser.Compile<Tuple<bool, string, string>>(
                     ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
-                return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
+                return Helpers.ToResultTree2(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)
             {
