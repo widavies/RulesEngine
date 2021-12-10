@@ -114,8 +114,7 @@
               "L": "Lug",
               "T": "Pluggable terminal block",
               "R": "Ring terminal"
-            },
-            "Requires": {}
+            }
           }
         ]
       },
@@ -264,8 +263,13 @@
             "RuleExpressionType": "RegexCaptureExpression",
             "Expression": "<ZCT>-([E0-9](116|127|136|142))",
             "Requires": {
-              "BoardType": "SCUF-1HX-50R",
+              "Board": "SCUF-1HX-50R",
               "FrameStyle": "N"
+            },
+            "EachRequires": {
+               "0136": {
+                 "BoardType": "HX"
+               }
             }
           }
         ]

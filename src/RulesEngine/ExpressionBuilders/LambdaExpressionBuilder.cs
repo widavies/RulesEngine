@@ -27,19 +27,22 @@ namespace RulesEngine.ExpressionBuilders
         {
             try
             {
-                var ruleDelegate = _ruleExpressionParser.Compile<bool>(rule.Expression, ruleParams);
+                // Add requires
+                var ruleDelegate = _ruleExpressionParser.Compile<bool>(
+                    $"{rule.Expression} && {Utils.RequiresToExpression(rule.Requires, null)}", ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)
             {
-                Helpers.HandleRuleException(ex,rule,_reSettings);
+                Helpers.HandleRuleException(ex, rule, _reSettings);
 
-                var exceptionMessage = Helpers.GetExceptionMessage($"Exception while parsing expression `{rule?.Expression}` - {ex.Message}",
-                                                                    _reSettings);
+                var exceptionMessage = Helpers.GetExceptionMessage(
+                    $"Exception while parsing expression `{rule?.Expression}` - {ex.Message}",
+                    _reSettings);
 
                 bool func(object[] param) => false;
-                
-                return Helpers.ToResultTree(_reSettings, rule, null,func, exceptionMessage);
+
+                return Helpers.ToResultTree(_reSettings, rule, null, func, exceptionMessage);
             }
         }
 
@@ -49,14 +52,14 @@ namespace RulesEngine.ExpressionBuilders
             {
                 return _ruleExpressionParser.Parse(expression, parameters, returnType);
             }
-            catch(ParseException ex)
+            catch (ParseException ex)
             {
                 throw new ExpressionParserException(ex.Message, expression);
             }
-            
         }
 
-        internal override Func<object[],Dictionary<string,object>> CompileScopedParams(RuleParameter[] ruleParameters, RuleExpressionParameter[] scopedParameters)
+        internal override Func<object[], Dictionary<string, object>> CompileScopedParams(RuleParameter[] ruleParameters,
+            RuleExpressionParameter[] scopedParameters)
         {
             return _ruleExpressionParser.CompileRuleExpressionParameters(ruleParameters, scopedParameters);
         }

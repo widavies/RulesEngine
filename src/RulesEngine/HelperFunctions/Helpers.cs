@@ -6,7 +6,6 @@ using RulesEngine.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace RulesEngine.HelperFunctions
 {
@@ -15,10 +14,11 @@ namespace RulesEngine.HelperFunctions
     /// </summary>
     internal static class Helpers
     {
-        internal static RuleFunc<RuleResultTree> ToResultTree(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], bool> isSuccessFunc, string exceptionMessage = "")
+        internal static RuleFunc<RuleResultTree> ToResultTree(ReSettings reSettings, Rule rule,
+            IEnumerable<RuleResultTree> childRuleResults, Func<object[], bool> isSuccessFunc,
+            string exceptionMessage = "")
         {
             return (inputs) => {
-
                 var isSuccess = false;
                 var inputsDict = new Dictionary<string, object>();
                 try
@@ -28,8 +28,10 @@ namespace RulesEngine.HelperFunctions
                 }
                 catch (Exception ex)
                 {
-                    exceptionMessage = GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}", reSettings);
-                    HandleRuleException(new RuleException(exceptionMessage,ex), rule, reSettings);
+                    exceptionMessage =
+                        GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}",
+                            reSettings);
+                    HandleRuleException(new RuleException(exceptionMessage, ex), rule, reSettings);
                     isSuccess = false;
                 }
 
@@ -40,14 +42,14 @@ namespace RulesEngine.HelperFunctions
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage
                 };
-
             };
         }
-        
-        internal static RuleFunc<RuleResultTree> ToResultTree1(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string>> isSuccessFunc, string exceptionMessage = "")
+
+        internal static RuleFunc<RuleResultTree> ToResultTree1(ReSettings reSettings, Rule rule,
+            IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string>> isSuccessFunc,
+            string exceptionMessage = "")
         {
             return (inputs) => {
-
                 bool isSuccess;
                 string regexMatched;
                 var inputsDict = new Dictionary<string, object>();
@@ -56,14 +58,16 @@ namespace RulesEngine.HelperFunctions
                     inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
 
                     var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
-                    
+
                     isSuccess = res.Item1;
                     regexMatched = res.Item2;
                 }
                 catch (Exception ex)
                 {
-                    exceptionMessage = GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}", reSettings);
-                    HandleRuleException(new RuleException(exceptionMessage,ex), rule, reSettings);
+                    exceptionMessage =
+                        GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}",
+                            reSettings);
+                    HandleRuleException(new RuleException(exceptionMessage, ex), rule, reSettings);
                     isSuccess = false;
                     regexMatched = null;
                 }
@@ -76,14 +80,14 @@ namespace RulesEngine.HelperFunctions
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage
                 };
-
             };
         }
 
-        internal static RuleFunc<RuleResultTree> ToResultTree2(ReSettings reSettings, Rule rule, IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string, string>> isSuccessFunc, string exceptionMessage = "")
+        internal static RuleFunc<RuleResultTree> ToResultTree2(ReSettings reSettings, Rule rule,
+            IEnumerable<RuleResultTree> childRuleResults,
+            Func<object[], ValueTuple<bool, string, string>> isSuccessFunc, string exceptionMessage = "")
         {
             return (inputs) => {
-
                 bool isSuccess;
                 string regexMatched;
                 string regexCapture;
@@ -93,15 +97,17 @@ namespace RulesEngine.HelperFunctions
                     inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
 
                     var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
-                    
+
                     isSuccess = res.Item1;
                     regexMatched = res.Item2;
                     regexCapture = res.Item3;
                 }
                 catch (Exception ex)
                 {
-                    exceptionMessage = GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}", reSettings);
-                    HandleRuleException(new RuleException(exceptionMessage,ex), rule, reSettings);
+                    exceptionMessage =
+                        GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}",
+                            reSettings);
+                    HandleRuleException(new RuleException(exceptionMessage, ex), rule, reSettings);
                     isSuccess = false;
                     regexMatched = null;
                     regexCapture = null;
@@ -116,11 +122,63 @@ namespace RulesEngine.HelperFunctions
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage
                 };
-
             };
         }
-        
-        internal static RuleFunc<RuleResultTree> ToRuleExceptionResult(ReSettings reSettings, Rule rule,Exception ex)
+
+        internal static RuleFunc<RuleResultTree> ToResultTree3(ReSettings reSettings, Rule rule,
+            IEnumerable<RuleResultTree> childRuleResults,
+            Func<object[], ValueTuple<bool, string, string>> isSuccessFunc, Func<object[], bool> requiresDelegate,
+            string exceptionMessage = "")
+        {
+            return (inputs) => {
+                bool isSuccess;
+                var requiresSuccess = true;
+                string regexMatched;
+                string regexCapture;
+                var inputsDict = new Dictionary<string, object>();
+                try
+                {
+                    inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
+
+                    var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
+                    
+                    isSuccess = res.Item1;
+                    regexMatched = res.Item2;
+                    regexCapture = res.Item3;
+
+                    // TODO fail if no capture
+
+                    if (requiresDelegate != null)
+                    {
+                        var requires = requiresDelegate(inputs.Select(c => c.Value).Concat(new []{regexCapture}).ToArray());
+                        
+                       requiresSuccess = requires;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    exceptionMessage =
+                        GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}",
+                            reSettings);
+                    HandleRuleException(new RuleException(exceptionMessage, ex), rule, reSettings);
+                    isSuccess = false;
+                    regexMatched = null;
+                    regexCapture = null;
+                }
+
+                return new RuleResultTree {
+                    Rule = rule,
+                    Inputs = inputsDict,
+                    IsSuccess = isSuccess && requiresSuccess,
+                    RegexMatched = regexMatched,
+                    RegexCapture = regexCapture,
+                    ChildResults = childRuleResults,
+                    ExceptionMessage = exceptionMessage
+                };
+            };
+        }
+
+        internal static RuleFunc<RuleResultTree> ToRuleExceptionResult(ReSettings reSettings, Rule rule, Exception ex)
         {
             HandleRuleException(ex, rule, reSettings);
             return ToResultTree(reSettings, rule, null, (args) => false, ex.Message);
@@ -145,7 +203,7 @@ namespace RulesEngine.HelperFunctions
         /// <param name="rule"></param>
         /// <param name="reSettings"></param>
         /// <returns></returns>
-        internal static string GetExceptionMessage(string message,ReSettings reSettings)
+        internal static string GetExceptionMessage(string message, ReSettings reSettings)
         {
             return reSettings.IgnoreException ? "" : message;
         }
@@ -156,7 +214,8 @@ namespace RulesEngine.HelperFunctions
         /// <param name="ruleResultTree">ruleResultTree</param>
         /// <param name="ruleResultMessage">ruleResultMessage</param>
         [Obsolete]
-        internal static void ToResultTreeMessages(RuleResultTree ruleResultTree, ref RuleResultMessage ruleResultMessage)
+        internal static void ToResultTreeMessages(RuleResultTree ruleResultTree,
+            ref RuleResultMessage ruleResultMessage)
         {
             if (ruleResultTree.ChildResults != null)
             {
@@ -167,13 +226,17 @@ namespace RulesEngine.HelperFunctions
                 if (!ruleResultTree.IsSuccess)
                 {
                     string errMsg = ruleResultTree.Rule.ErrorMessage;
-                    errMsg = string.IsNullOrEmpty(errMsg) ? $"Error message is not configured for {ruleResultTree.Rule.RuleName}" : errMsg;
+                    errMsg = string.IsNullOrEmpty(errMsg)
+                        ? $"Error message is not configured for {ruleResultTree.Rule.RuleName}"
+                        : errMsg;
 
-                    if (ruleResultTree.Rule.ErrorType == ErrorType.Error && !ruleResultMessage.ErrorMessages.Contains(errMsg))
+                    if (ruleResultTree.Rule.ErrorType == ErrorType.Error &&
+                        !ruleResultMessage.ErrorMessages.Contains(errMsg))
                     {
                         ruleResultMessage.ErrorMessages.Add(errMsg);
                     }
-                    else if (ruleResultTree.Rule.ErrorType == ErrorType.Warning && !ruleResultMessage.WarningMessages.Contains(errMsg))
+                    else if (ruleResultTree.Rule.ErrorType == ErrorType.Warning &&
+                             !ruleResultMessage.WarningMessages.Contains(errMsg))
                     {
                         ruleResultMessage.WarningMessages.Add(errMsg);
                     }
@@ -187,7 +250,8 @@ namespace RulesEngine.HelperFunctions
         /// <param name="childResultTree">childResultTree</param>
         /// <param name="ruleResultMessage">ruleResultMessage</param>
         [Obsolete]
-        private static void GetChildRuleMessages(IEnumerable<RuleResultTree> childResultTree, ref RuleResultMessage ruleResultMessage)
+        private static void GetChildRuleMessages(IEnumerable<RuleResultTree> childResultTree,
+            ref RuleResultMessage ruleResultMessage)
         {
             foreach (var item in childResultTree)
             {

@@ -30,6 +30,7 @@ namespace RulesEngine
     public class RulesEngine : IRulesEngine
     {
         #region Variables
+
         private readonly ILogger _logger;
         private readonly ReSettings _reSettings;
         private readonly RulesCache _rulesCache = new RulesCache();
@@ -37,16 +38,20 @@ namespace RulesEngine
         private readonly RuleCompiler _ruleCompiler;
         private readonly ActionFactory _actionFactory;
         private const string ParamParseRegex = "(\\$\\(.*?\\))";
+
         #endregion
 
         #region Constructor
-        public RulesEngine(string[] jsonConfig, ILogger logger = null, ReSettings reSettings = null) : this(logger, reSettings)
+
+        public RulesEngine(string[] jsonConfig, ILogger logger = null, ReSettings reSettings = null) : this(logger,
+            reSettings)
         {
             var workflow = jsonConfig.Select(item => JsonConvert.DeserializeObject<Workflow>(item)).ToArray();
             AddWorkflow(workflow);
         }
 
-        public RulesEngine(Workflow[] Workflows, ILogger logger = null, ReSettings reSettings = null) : this(logger, reSettings)
+        public RulesEngine(Workflow[] Workflows, ILogger logger = null, ReSettings reSettings = null) : this(logger,
+            reSettings)
         {
             AddWorkflow(Workflows);
         }
@@ -56,11 +61,12 @@ namespace RulesEngine
             _logger = logger ?? new NullLogger<RulesEngine>();
             _reSettings = reSettings ?? new ReSettings();
             _ruleExpressionParser = new RuleExpressionParser(_reSettings);
-            _ruleCompiler = new RuleCompiler(new RuleExpressionBuilderFactory(_reSettings, _ruleExpressionParser),_reSettings, _logger);
+            _ruleCompiler = new RuleCompiler(new RuleExpressionBuilderFactory(_reSettings, _ruleExpressionParser),
+                _reSettings, _logger);
             _actionFactory = new ActionFactory(GetActionRegistry(_reSettings));
-            
+
             var builtInTypes = new[] {typeof(BuiltInCustomTypes), typeof(string), typeof(Regex)};
-            
+
             _reSettings.CustomTypes = _reSettings.CustomTypes?.Concat(builtInTypes).ToArray() ?? builtInTypes;
         }
 
@@ -72,9 +78,10 @@ namespace RulesEngine
             {
                 actionDictionary.Add(customAction);
             }
-            return actionDictionary;
 
+            return actionDictionary;
         }
+
         #endregion
 
         #region Public Methods
@@ -87,7 +94,8 @@ namespace RulesEngine
         /// <returns>List of rule results</returns>
         public async ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName, params object[] inputs)
         {
-            _logger.LogTrace($"Called {nameof(ExecuteAllRulesAsync)} for workflow {workflowName} and count of input {inputs.Count()}");
+            _logger.LogTrace(
+                $"Called {nameof(ExecuteAllRulesAsync)} for workflow {workflowName} and count of input {inputs.Count()}");
 
             var ruleParams = new List<RuleParameter>();
 
@@ -106,7 +114,8 @@ namespace RulesEngine
         /// <param name="workflowName">The name of the workflow with rules to execute against the inputs</param>
         /// <param name="ruleParams">A variable number of rule parameters</param>
         /// <returns>List of rule results</returns>
-        public async ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName, params RuleParameter[] ruleParams)
+        public async ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName,
+            params RuleParameter[] ruleParams)
         {
             var ruleResultList = ValidateWorkflowAndExecuteRule(workflowName, ruleParams);
             await ExecuteActionAsync(ruleResultList);
@@ -117,26 +126,28 @@ namespace RulesEngine
         {
             foreach (var ruleResult in ruleResultList)
             {
-                if(ruleResult.ChildResults !=  null)
+                if (ruleResult.ChildResults != null)
                 {
                     await ExecuteActionAsync(ruleResult.ChildResults);
                 }
+
                 var actionResult = await ExecuteActionForRuleResult(ruleResult, false);
                 ruleResult.ActionResult = new ActionResult {
-                    Output = actionResult.Output,
-                    Exception = actionResult.Exception
+                    Output = actionResult.Output, Exception = actionResult.Exception
                 };
             }
         }
 
-        public async ValueTask<ActionRuleResult> ExecuteActionWorkflowAsync(string workflowName, string ruleName, RuleParameter[] ruleParameters)
+        public async ValueTask<ActionRuleResult> ExecuteActionWorkflowAsync(string workflowName, string ruleName,
+            RuleParameter[] ruleParameters)
         {
             var compiledRule = CompileRule(workflowName, ruleName, ruleParameters);
             var resultTree = compiledRule(ruleParameters);
             return await ExecuteActionForRuleResult(resultTree, true);
         }
 
-        private async ValueTask<ActionRuleResult> ExecuteActionForRuleResult(RuleResultTree resultTree, bool includeRuleResults = false)
+        private async ValueTask<ActionRuleResult> ExecuteActionForRuleResult(RuleResultTree resultTree,
+            bool includeRuleResults = false)
         {
             var ruleActions = resultTree?.Rule?.Actions;
             var actionInfo = resultTree?.IsSuccess == true ? ruleActions?.OnSuccess : ruleActions?.OnFailure;
@@ -145,14 +156,14 @@ namespace RulesEngine
             {
                 var action = _actionFactory.Get(actionInfo.Name);
                 var ruleParameters = resultTree.Inputs.Select(kv => new RuleParameter(kv.Key, kv.Value)).ToArray();
-                return await action.ExecuteAndReturnResultAsync(new ActionContext(actionInfo.Context, resultTree), ruleParameters, includeRuleResults);
+                return await action.ExecuteAndReturnResultAsync(new ActionContext(actionInfo.Context, resultTree),
+                    ruleParameters, includeRuleResults);
             }
             else
             {
                 //If there is no action,return output as null and return the result for rule
                 return new ActionRuleResult {
-                    Output = null,
-                    Results = includeRuleResults ? new List<RuleResultTree>() { resultTree } : null
+                    Output = null, Results = includeRuleResults ? new List<RuleResultTree>() {resultTree} : null
                 };
             }
         }
@@ -170,19 +181,20 @@ namespace RulesEngine
         {
             // try
             // {
-                foreach (var workflow in workflows)
-                {                    
-                    var validator = new WorkflowsValidator();
-                    validator.ValidateAndThrow(workflow);
-                    if (!_rulesCache.ContainsWorkflows(workflow.WorkflowName))
-                    {
-                        _rulesCache.AddOrUpdateWorkflows(workflow.WorkflowName, workflow);
-                    }
-                    else
-                    {
-                        throw new ValidationException($"Cannot add workflow `{workflow.WorkflowName}` as it already exists. Use `AddOrUpdateWorkflow` to update existing workflow");
-                    }
+            foreach (var workflow in workflows)
+            {
+                var validator = new WorkflowsValidator();
+                validator.ValidateAndThrow(workflow);
+                if (!_rulesCache.ContainsWorkflows(workflow.WorkflowName))
+                {
+                    _rulesCache.AddOrUpdateWorkflows(workflow.WorkflowName, workflow);
                 }
+                else
+                {
+                    throw new ValidationException(
+                        $"Cannot add workflow `{workflow.WorkflowName}` as it already exists. Use `AddOrUpdateWorkflow` to update existing workflow");
+                }
+            }
             // }
             // catch (ValidationException ex)
             // {
@@ -247,7 +259,8 @@ namespace RulesEngine
                 _rulesCache.Remove(workflowName);
             }
         }
- /// <summary>
+
+        /// <summary>
         /// Some rules reference other rules. Rules are executed one by one.
         /// This function determines what that order is. If there is
         /// no possible execution plan (a circular dependency exists),
@@ -263,9 +276,9 @@ namespace RulesEngine
         {
             var enumerable = rules as Rule[] ?? rules.ToArray();
             var graph = new Graph<string, Rule>();
-            
+
             var keys = enumerable.Select(x => x.RuleName).ToList();
-            
+
             foreach (var rule in enumerable)
             {
                 // Determine the dependencies of a node by what nodes it references.
@@ -285,9 +298,12 @@ namespace RulesEngine
                     {
                         dependencies.AddRange(keys.Where(key =>
                             // Regex checks for unescaped (not-quoted) variable names referencing the rule
-                            Utils.References(node.Expression, key)));
+                            Utils.ExpressionReferences(node.Expression, key) ||
+                            (node.Requires?.Keys.Any(x => x == key) ?? false) ||
+                            (node.EachRequires?.Any(x
+                                => x.Value?.Keys?.Any(y => y == key) ?? false) ?? false)));
                     }
-                    
+
                     if (node.Rules != null)
                     {
                         foreach (var child in node.Rules)
@@ -296,22 +312,22 @@ namespace RulesEngine
                         }
                     }
                 }
-                
+
                 graph.AddNode(rule.RuleName, rule, dependencies);
             }
 
             var executionOrder = new List<Rule>();
-            
+
             // From here, use the graph to decide execution order
             var result = graph.TopologicalSort();
             foreach (var layer in result.layers)
             {
                 executionOrder.AddRange(layer.Select(x => graph[x]));
             }
-            
+
             return executionOrder;
         }
-        
+
         /// <summary>
         /// This will validate workflow rules then call execute method
         /// </summary>
@@ -348,10 +364,10 @@ namespace RulesEngine
                             throw new ArgumentException(
                                 $"Workflow {workflowName}, Rule {rule.RuleName} was not compiled");
                         }
-                        
+
                         var res = compiledRule(ruleParams);
                         result.Add(res);
-                        
+
                         if (res.IsSuccess && Enum.TryParse(rule.Operator, out ExpressionType nestedOperator) &&
                             nestedOperator == ExpressionType.ExclusiveOr)
                         {
@@ -379,12 +395,13 @@ namespace RulesEngine
                                     Name = $"{res.Rule.RuleName}_Name", Expression = $"\"{child.Rule.RuleName}\""
                                 });
                             }
-                            
+
                             // If the winner was regex related, make the string it matched available
                             if (child.RegexMatched != null)
                             {
+                                
                                 intermediateParams.Add(new ScopedParam {
-                                    Name = $"{res.Rule.RuleName}_MatchedRegex", Expression = $"\"{res.RegexMatched}\""
+                                    Name = $"{res.Rule.RuleName}_MatchedRegex", Expression = $"\"{child.RegexMatched}\""
                                 });
                             }
                         }
@@ -428,10 +445,10 @@ namespace RulesEngine
 
 
                 var combined = workflow.GlobalParams?.Concat(intermediateParams).ToArray() ??
-                                   intermediateParams.ToArray();
-                
+                               intermediateParams.ToArray();
+
                 dictFunc.Add(rule.RuleName, CompileRule(rule, ruleParams, combined));
-                
+
                 _rulesCache.AddOrUpdateCompiledRule(compileRulesKey, dictFunc);
                 _logger.LogTrace($"Rules has been compiled for the {workflowName} workflow and added to dictionary");
                 return true;
@@ -443,18 +460,21 @@ namespace RulesEngine
         }
 
 
-        private RuleFunc<RuleResultTree> CompileRule(string workflowName, string ruleName, RuleParameter[] ruleParameters)
+        private RuleFunc<RuleResultTree> CompileRule(string workflowName, string ruleName,
+            RuleParameter[] ruleParameters)
         {
             var workflow = _rulesCache.GetWorkflow(workflowName);
-            if(workflow == null)
+            if (workflow == null)
             {
                 throw new ArgumentException($"Workflow `{workflowName}` is not found");
             }
+
             var currentRule = workflow.Rules?.SingleOrDefault(c => c.RuleName == ruleName && c.Enabled);
             if (currentRule == null)
             {
                 throw new ArgumentException($"Workflow `{workflowName}` does not contain any rule named `{ruleName}`");
             }
+
             return CompileRule(currentRule, ruleParameters, workflow.GlobalParams?.ToArray());
         }
 
@@ -494,9 +514,9 @@ namespace RulesEngine
 
         private IDictionary<string, Func<ActionBase>> GetDefaultActionRegistry()
         {
-            return new Dictionary<string, Func<ActionBase>>{
-                {"OutputExpression",() => new OutputExpressionAction(_ruleExpressionParser) },
-                {"EvaluateRule", () => new EvaluateRuleAction(this,_ruleExpressionParser) }
+            return new Dictionary<string, Func<ActionBase>> {
+                {"OutputExpression", () => new OutputExpressionAction(_ruleExpressionParser)},
+                {"EvaluateRule", () => new EvaluateRuleAction(this, _ruleExpressionParser)}
             };
         }
 
@@ -525,21 +545,23 @@ namespace RulesEngine
                             {
                                 var typeName = property?.Split('.')?[0];
                                 var propertyName = property?.Split('.')?[1];
-                                errorMessage = UpdateErrorMessage(errorMessage, inputs, property, typeName, propertyName);
+                                errorMessage = UpdateErrorMessage(errorMessage, inputs, property, typeName,
+                                    propertyName);
                             }
                             else
                             {
-                                var arrParams = inputs?.Select(c => new { Name = c.Key, c.Value });
+                                var arrParams = inputs?.Select(c => new {Name = c.Key, c.Value});
                                 var model = arrParams?.Where(a => string.Equals(a.Name, property))?.FirstOrDefault();
                                 var value = model?.Value != null ? JsonConvert.SerializeObject(model?.Value) : null;
                                 errorMessage = errorMessage?.Replace($"$({property})", value ?? $"$({property})");
                             }
                         }
+
                         ruleResult.ExceptionMessage = errorMessage;
                     }
-
                 }
             }
+
             return ruleResultList;
         }
 
@@ -552,9 +574,10 @@ namespace RulesEngine
         /// <param name="typeName">Name of the type.</param>
         /// <param name="propertyName">Name of the property.</param>
         /// <returns>Updated error message.</returns>
-        private static string UpdateErrorMessage(string errorMessage, IDictionary<string, object> inputs, string property, string typeName, string propertyName)
+        private static string UpdateErrorMessage(string errorMessage, IDictionary<string, object> inputs,
+            string property, string typeName, string propertyName)
         {
-            var arrParams = inputs?.Select(c => new { Name = c.Key, c.Value });
+            var arrParams = inputs?.Select(c => new {Name = c.Key, c.Value});
             var model = arrParams?.Where(a => string.Equals(a.Name, typeName))?.FirstOrDefault();
             if (model != null)
             {
@@ -562,11 +585,13 @@ namespace RulesEngine
                 var jObj = JObject.Parse(modelJson);
                 JToken jToken = null;
                 var val = jObj?.TryGetValue(propertyName, StringComparison.OrdinalIgnoreCase, out jToken);
-                errorMessage = errorMessage.Replace($"$({property})", jToken != null ? jToken?.ToString() : $"({property})");
+                errorMessage = errorMessage.Replace($"$({property})",
+                    jToken != null ? jToken?.ToString() : $"({property})");
             }
 
             return errorMessage;
         }
+
         #endregion
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RulesEngine.HelperFunctions
@@ -142,7 +143,7 @@ namespace RulesEngine.HelperFunctions
         {
             return $@"(?<!\\)\\(?:\\\\)*{str}";
         }
-        
+
         private static string PatternUnescaped(string left, string center, string right)
         {
             return $"{PatternUnescaped(left)}\\s*{center}\\s*{PatternUnescaped(right)}";
@@ -158,7 +159,7 @@ namespace RulesEngine.HelperFunctions
             str = Regex.Replace(str, PatternEscaped("<"), "<");
             str = Regex.Replace(str, PatternEscaped(">"), ">");
             str = Regex.Replace(str, PatternEscaped("%"), "%");
-            
+
             return $"\"{str}\"";
         }
 
@@ -168,7 +169,7 @@ namespace RulesEngine.HelperFunctions
             {
                 return "";
             }
-            
+
             var patternRefRegex = PatternUnescaped("<", @"\w+", ">");
             var patternRefName = PatternUnescaped("%", @"\w+", "%");
 
@@ -177,7 +178,7 @@ namespace RulesEngine.HelperFunctions
             if (match.Success)
             {
                 var rest = expression.Substring(match.Index + match.Length);
-                
+
                 return ParseStringConstant(expression.Substring(0, match.Index)) +
                        Regex.Replace(match.Value, $"({PatternUnescaped("<")}|{PatternUnescaped(">")})", "").Trim()
                        + "_MatchedRegex" + (rest.Length > 0 ? "," : "")
@@ -189,13 +190,13 @@ namespace RulesEngine.HelperFunctions
             if (match.Success)
             {
                 var rest = expression.Substring(match.Index + match.Length);
-                
+
                 return ParseStringConstant(expression.Substring(0, match.Index)) +
                        Regex.Replace(match.Value, $"({PatternUnescaped("%")}|{PatternUnescaped("%")})", "").Trim()
                        + "_Name" + (rest.Length > 0 ? "," : "")
                        + ExpandReferenceRecursively(rest);
             }
-            
+
             return ParseStringConstant(expression);
         }
 
@@ -207,7 +208,43 @@ namespace RulesEngine.HelperFunctions
         public static string ExpandReferences(string expression)
         {
             // Last bit here assumes there are always at least two arguments to the string concat
-            return string.IsNullOrEmpty(expression) ? expression : $"string.Concat({ExpandReferenceRecursively(expression)},\"\")";
+            return string.IsNullOrEmpty(expression)
+                ? expression
+                : $"string.Concat({ExpandReferenceRecursively(expression)},\"\")";
+        }
+
+        // Generates an expression for the requires statements
+        private static string RequirementListToExpression(Dictionary<string, string> requires)
+        {
+            var sb = new StringBuilder();
+
+            if (requires != null)
+            {
+                sb.Append(string.Join("&&", requires.Select(entry => $"BuiltInCustomTypes.RegexMatchCaseInsensitive({entry.Key}_Name, \"{entry.Value}\", true).Item1")));
+            }
+            
+            return sb.Length > 0 ? sb.ToString() : "true";
+        }
+        
+        public static string RequiresToExpression(Dictionary<string, string> requires,
+            Dictionary<string, Dictionary<string, string>> eachRequires)
+        {
+            var sb = new StringBuilder("true");
+
+            if (requires != null)
+            {
+                sb.Append("&& (").Append(RequirementListToExpression(requires)).Append(")");
+            }
+            
+            if (eachRequires != null)
+            {
+                foreach (var entry in eachRequires)
+                {
+                    sb.Append($"&& !(BuiltInCustomTypes.RegexMatchCaseInsensitive(CAPTURE, \"{entry.Key}\",true).Item1 && !{RequirementListToExpression(entry.Value)})");    
+                }
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -216,7 +253,7 @@ namespace RulesEngine.HelperFunctions
         /// <param name="expression"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static bool References(string expression, string name)
+        public static bool ExpressionReferences(string expression, string name)
         {
             var patternRefRegex = PatternUnescaped("<", name, ">");
             var patternRefName = PatternUnescaped("%", name, "%");

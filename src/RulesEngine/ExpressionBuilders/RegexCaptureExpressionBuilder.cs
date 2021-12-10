@@ -47,19 +47,30 @@ namespace RulesEngine.ExpressionBuilders
                 {
                     // return rule.CaseSensitiveRegex ?
                     //     $"BuiltInCustomTypes.RegexMatchSensitive({first.Name}, {expression})" :
-                    return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expression})";
+                    return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expression}, {Utils.RequiresToExpression(rule.Requires, null)})";
                 }
                 
                 var ruleDelegate = _ruleExpressionParser.Compile<ValueTuple<bool, string, string>>(
                     ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
-                return Helpers.ToResultTree2(_reSettings, rule, null, ruleDelegate);
+
+                Func<object[], bool> requiresDelegate = null;
+                
+                if (rule.EachRequires != null)
+                {
+                    requiresDelegate = _ruleExpressionParser.Compile<bool>(Utils.RequiresToExpression(null, rule.EachRequires),
+                        ruleParams.Concat(new [] {
+                            new RuleParameter("CAPTURE", typeof(string))
+                        }).ToArray());
+                }
+                
+                return Helpers.ToResultTree3(_reSettings, rule, null, ruleDelegate, requiresDelegate);
             }
             catch (Exception ex)
             {
                 Helpers.HandleRuleException(ex, rule, _reSettings);
 
                 var exceptionMessage = Helpers.GetExceptionMessage(
-                    $"DException while parsing expression `{rule?.Expression}` - {ex.Message}",
+                    $"Exception while parsing expression `{rule?.Expression}` - {ex.Message}",
                     _reSettings);
 
                 bool func(object[] param) => false;
@@ -84,7 +95,7 @@ namespace RulesEngine.ExpressionBuilders
                 {
                     // return rule.CaseSensitiveRegex ?
                     //     $"BuiltInCustomTypes.RegexMatchSensitive({first.Name}, {expression})" :
-                    return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expr})";
+                    return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expr}, true)";
                 }
                 
                 return _ruleExpressionParser.Parse(
