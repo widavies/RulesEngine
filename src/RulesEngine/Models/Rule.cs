@@ -54,6 +54,8 @@ namespace RulesEngine.Models
         public RuleActions Actions { get; set; }
         public string SuccessEvent { get; set; }
 
+        public string Default { get; set; } = null;
+        
         /// <summary>
         /// Applies when <see cref="RuleExpressionType"/> is <c>RuleExpressionType.RegexExpression</c>
         /// or <c>RuleExpressionType.RegexCaptureExpression</c>
