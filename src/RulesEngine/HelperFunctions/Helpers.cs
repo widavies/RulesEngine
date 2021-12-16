@@ -46,12 +46,13 @@ namespace RulesEngine.HelperFunctions
         }
 
         internal static RuleFunc<RuleResultTree> ToResultTree1(ReSettings reSettings, Rule rule,
-            IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string>> isSuccessFunc,
+            IEnumerable<RuleResultTree> childRuleResults, Func<object[], ValueTuple<bool, string, ValueTuple<int, int>>> isSuccessFunc,
             string exceptionMessage = "")
         {
             return (inputs) => {
                 bool isSuccess;
                 string regexMatched;
+                (int, int) regexRange;
                 var inputsDict = new Dictionary<string, object>();
                 try
                 {
@@ -61,6 +62,7 @@ namespace RulesEngine.HelperFunctions
 
                     isSuccess = res.Item1;
                     regexMatched = res.Item2;
+                    regexRange = res.Item3;
                 }
                 catch (Exception ex)
                 {
@@ -70,6 +72,7 @@ namespace RulesEngine.HelperFunctions
                     HandleRuleException(new RuleException(exceptionMessage, ex), rule, reSettings);
                     isSuccess = false;
                     regexMatched = null;
+                    regexRange = (-1, -1);
                 }
 
                 return new RuleResultTree {
@@ -77,63 +80,23 @@ namespace RulesEngine.HelperFunctions
                     Inputs = inputsDict,
                     IsSuccess = isSuccess,
                     RegexMatched = regexMatched,
+                    RegexMatchedRange = regexRange,
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage
                 };
             };
         }
-
-        internal static RuleFunc<RuleResultTree> ToResultTree2(ReSettings reSettings, Rule rule,
-            IEnumerable<RuleResultTree> childRuleResults,
-            Func<object[], ValueTuple<bool, string, string>> isSuccessFunc, string exceptionMessage = "")
-        {
-            return (inputs) => {
-                bool isSuccess;
-                string regexMatched;
-                string regexCapture;
-                var inputsDict = new Dictionary<string, object>();
-                try
-                {
-                    inputsDict = inputs.ToDictionary(c => c.Name, c => c.Value);
-
-                    var res = isSuccessFunc(inputs.Select(c => c.Value).ToArray());
-
-                    isSuccess = res.Item1;
-                    regexMatched = res.Item2;
-                    regexCapture = res.Item3;
-                }
-                catch (Exception ex)
-                {
-                    exceptionMessage =
-                        GetExceptionMessage($"Error while executing rule : {rule?.RuleName} - {ex.Message}",
-                            reSettings);
-                    HandleRuleException(new RuleException(exceptionMessage, ex), rule, reSettings);
-                    isSuccess = false;
-                    regexMatched = null;
-                    regexCapture = null;
-                }
-
-                return new RuleResultTree {
-                    Rule = rule,
-                    Inputs = inputsDict,
-                    IsSuccess = isSuccess,
-                    RegexMatched = regexMatched,
-                    RegexCapture = regexCapture,
-                    ChildResults = childRuleResults,
-                    ExceptionMessage = exceptionMessage
-                };
-            };
-        }
-
+        
         internal static RuleFunc<RuleResultTree> ToResultTree3(ReSettings reSettings, Rule rule,
             IEnumerable<RuleResultTree> childRuleResults,
-            Func<object[], ValueTuple<bool, string, string>> isSuccessFunc, Func<object[], bool> requiresDelegate,
+            Func<object[], ValueTuple<bool, string, ValueTuple<int, int>, string>> isSuccessFunc, Func<object[], bool> requiresDelegate,
             string exceptionMessage = "")
         {
             return (inputs) => {
                 bool isSuccess;
                 var requiresSuccess = true;
                 string regexMatched;
+                ValueTuple<int, int> regexRange;
                 string regexCapture;
                 var inputsDict = new Dictionary<string, object>();
                 try
@@ -144,7 +107,8 @@ namespace RulesEngine.HelperFunctions
                     
                     isSuccess = res.Item1;
                     regexMatched = res.Item2;
-                    regexCapture = res.Item3;
+                    regexRange = res.Item3;
+                    regexCapture = res.Item4;
 
                     // TODO fail if no capture
 
@@ -164,6 +128,7 @@ namespace RulesEngine.HelperFunctions
                     isSuccess = false;
                     regexMatched = null;
                     regexCapture = null;
+                    regexRange = (-1, -1);
                 }
 
                 return new RuleResultTree {
@@ -172,6 +137,7 @@ namespace RulesEngine.HelperFunctions
                     IsSuccess = isSuccess && requiresSuccess,
                     RegexMatched = regexMatched,
                     RegexCapture = regexCapture,
+                    RegexMatchedRange = regexRange,
                     ChildResults = childRuleResults,
                     ExceptionMessage = exceptionMessage
                 };

@@ -56,6 +56,11 @@ namespace RulesEngine.Models
         /// evaluated rule was a RegexExpression
         /// </summary>
         public string RegexMatched { get; set; }
+
+        /// <summary>
+        /// The start and length of the text this regular expression matched.
+        /// </summary>
+        public ValueTuple<int, int> RegexMatchedRange { get; set; } = (-1, -1);
         
         /// <summary>
         /// Gets the exception message in case an error is thrown during rules calculation.

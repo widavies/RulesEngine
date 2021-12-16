@@ -62,6 +62,8 @@ namespace RulesEngine.Models
         /// </summary>
         public bool CaseSensitiveRegex = false;
         
+        public bool Required = true;
+        
         /// <summary>
         /// Set when <see cref="RuleExpressionType"/> is NOT <c>RuleExpressionType.CaptureExpression</c>
         /// </summary>

@@ -50,7 +50,7 @@ namespace RulesEngine.ExpressionBuilders
                     return $"BuiltInCustomTypes.RegexCaptureCaseInsensitive({first.Name}, {expression}, {Utils.RequiresToExpression(rule.Requires, null)})";
                 }
                 
-                var ruleDelegate = _ruleExpressionParser.Compile<ValueTuple<bool, string, string>>(
+                var ruleDelegate = _ruleExpressionParser.Compile<ValueTuple<bool, string, ValueTuple<int, int>, string>>(
                     ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
 
                 Func<object[], bool> requiresDelegate = null;
