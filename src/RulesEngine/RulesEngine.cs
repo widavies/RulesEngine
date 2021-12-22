@@ -279,6 +279,8 @@ namespace RulesEngine
 
             var keys = enumerable.Select(x => x.RuleName).ToList();
 
+            var any = false;
+            
             foreach (var rule in enumerable)
             {
                 // Determine the dependencies of a node by what nodes it references.
@@ -482,8 +484,7 @@ namespace RulesEngine
         {
             return _ruleCompiler.CompileRule(rule, ruleParams, scopedParams);
         }
-
-
+        
         // /// <summary>
         // /// This will execute the compiled rules 
         // /// </summary>
@@ -501,7 +502,7 @@ namespace RulesEngine
         //         var resultTree = compiledRule(ruleParameters);
         //         result.Add(resultTree);
         //     }
-        //
+        //     
         //     FormatErrorMessages(result);
         //     return result;
         // }

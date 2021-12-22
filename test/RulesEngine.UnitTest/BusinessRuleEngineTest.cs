@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
@@ -83,7 +84,7 @@ namespace RulesEngine.UnitTest
             // Fetch and add new rules.
             var newWorkflow = ParseAsWorkflow(newWorkflowFile);
 
-            Assert.Throws<RuleValidationException>(() => re.AddWorkflow(newWorkflow));
+            Assert.Throws<ValidationException>(() => re.AddWorkflow(newWorkflow));
         }
 
         [Theory]
@@ -256,12 +257,12 @@ namespace RulesEngine.UnitTest
         [Fact]
         public void RulesEngine_New_IncorrectJSON_ThrowsException()
         {
-            Assert.Throws<RuleValidationException>(() => {
+            Assert.Throws<ValidationException>(() => {
                 var workflow = new Workflow();
                 var re = CreateRulesEngine(workflow);
             });
 
-            Assert.Throws<RuleValidationException>(() => {
+            Assert.Throws<ValidationException>(() => {
                 var workflow = new Workflow() { WorkflowName = "test" };
                 var re = CreateRulesEngine(workflow);
             });

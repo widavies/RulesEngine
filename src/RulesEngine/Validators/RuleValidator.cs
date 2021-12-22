@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using FluentValidation;
+using Newtonsoft.Json;
 using RulesEngine.ExpressionBuilders;
 using RulesEngine.HelperFunctions;
 using RulesEngine.Models;
@@ -24,9 +25,10 @@ namespace RulesEngine.Validators
 
         public RuleValidator()
         {
-            RuleFor(c => c)
-                .Must(x => x.RuleExpressionType == RuleExpressionType.RegexCaptureExpression ^ !string.IsNullOrEmpty(x.RuleName))
-                .WithMessage(Constants.RULE_NAME_NULL_ERRMSG);
+            // RuleFor(c => c)
+            //     .Must(x => (x.RuleExpressionType == RuleExpressionType.RegexCaptureExpression ^
+            //                !string.IsNullOrEmpty(x.RuleName)) || x.Requires != null)
+            //     .WithMessage(Constants.RULE_NAME_NULL_ERRMSG);
 
             //Nested expression check
             When(c => c.Operator != null, () => {
@@ -48,10 +50,13 @@ namespace RulesEngine.Validators
 
         private void RegisterExpressionTypeRules()
         {
-            When(c => c.Operator == null && c.RuleExpressionType == RuleExpressionType.LambdaExpression, () => {
-                RuleFor(c => c.Expression).NotEmpty().WithMessage(Constants.LAMBDA_EXPRESSION_EXPRESSION_NULL_ERRMSG);
-                RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
-            });
+            When(
+                c => c.Requires == null && c.Operator == null &&
+                     c.RuleExpressionType == RuleExpressionType.LambdaExpression, () => {
+                    RuleFor(c => c.Expression).NotEmpty()
+                        .WithMessage(Constants.LAMBDA_EXPRESSION_EXPRESSION_NULL_ERRMSG);
+                    RuleFor(c => c.Rules).Empty().WithMessage(Constants.OPERATOR_RULES_ERRMSG);
+                });
         }
 
         private bool BeValidRulesList(IEnumerable<Rule> rules)

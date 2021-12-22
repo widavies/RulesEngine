@@ -29,7 +29,7 @@ namespace RulesEngine.ExpressionBuilders
             {
                 // Add requires
                 var ruleDelegate = _ruleExpressionParser.Compile<bool>(
-                    $"{rule.Expression} && {Utils.RequiresToExpression(rule.Requires, null)}", ruleParams);
+                    $"{rule.RawExpression} && {Utils.RequiresToExpression(rule.Requires, null)}", ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)

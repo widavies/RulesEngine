@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using FluentValidation;
 using Newtonsoft.Json;
 using RulesEngine.Models;
 using System;
@@ -29,7 +30,7 @@ namespace RulesEngine.UnitTest
                 return Task.CompletedTask;
             };
 
-            Exception ex = await Assert.ThrowsAsync<Exceptions.RuleValidationException>(action);
+            Exception ex = await Assert.ThrowsAsync<ValidationException>(action);
 
             Assert.Contains("Atleast one of Rules or WorkflowsToInject must be not empty", ex.Message);
         }
@@ -45,7 +46,7 @@ namespace RulesEngine.UnitTest
                 return Task.CompletedTask;
             };
 
-            Exception ex = await Assert.ThrowsAsync<Exceptions.RuleValidationException>(action);
+            Exception ex = await Assert.ThrowsAsync<ValidationException>(action);
 
             Assert.Contains("Atleast one of Rules or WorkflowsToInject must be not empty", ex.Message);
         }

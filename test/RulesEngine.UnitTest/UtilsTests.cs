@@ -97,10 +97,10 @@ namespace RulesEngine.UnitTest
             const string expr3 = "<(test)>";
             const string expr4 = "<test >% test%test";
             
-            Assert.Equal("string.Concat(test.MatchedRegex,test.Name,\"test\",\"\")", Utils.ExpandReferences(expr1));
-            Assert.Equal("string.Concat(test.MatchedRegex,test.MatchedRegex,\"<test>\",\"\")", Utils.ExpandReferences(expr2));
+            Assert.Equal("string.Concat(test_MatchedRegex,test_Name,\"test\",\"\")", Utils.ExpandReferences(expr1));
+            Assert.Equal("string.Concat(test_MatchedRegex,test_MatchedRegex,\"<test>\",\"\")", Utils.ExpandReferences(expr2));
             Assert.Equal("string.Concat(\"<(test)>\",\"\")", Utils.ExpandReferences(expr3));
-            Assert.Equal("string.Concat(test.MatchedRegex,test.Name,\"test\",\"\")", Utils.ExpandReferences(expr4));
+            Assert.Equal("string.Concat(test_MatchedRegex,test_Name,\"test\",\"\")", Utils.ExpandReferences(expr4));
         }
 
 

@@ -18,7 +18,7 @@ namespace RulesEngine.Models
         /// <summary>
         /// Rule name for the Rule
         /// </summary>
-        public string RuleName { get; set; }
+        public string RuleName { get; set; } = Guid.NewGuid().ToString();
         /// <summary>	
         /// Gets or sets the custom property or tags of the rule.	
         /// </summary>	
@@ -51,6 +51,9 @@ namespace RulesEngine.Models
         public IEnumerable<Rule> Rules { get; set; }
         public IEnumerable<ScopedParam> LocalParams { get; set; }
         public string Expression { get; set; }
+
+        public string RawExpression => Expression ?? (Requires != null ? "true" : null);
+
         public RuleActions Actions { get; set; }
         public string SuccessEvent { get; set; }
 

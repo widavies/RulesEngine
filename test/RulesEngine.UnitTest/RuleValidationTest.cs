@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using FluentValidation;
 using Newtonsoft.Json;
 using RulesEngine.HelperFunctions;
 using RulesEngine.Models;
@@ -30,7 +31,7 @@ namespace RulesEngine.UnitTest
                 return Task.CompletedTask;
             };
 
-            Exception ex = await Assert.ThrowsAsync<Exceptions.RuleValidationException>(action);
+            Exception ex = await Assert.ThrowsAsync<ValidationException>(action);
 
             Assert.Contains(Constants.LAMBDA_EXPRESSION_EXPRESSION_NULL_ERRMSG, ex.Message);
 
@@ -48,7 +49,7 @@ namespace RulesEngine.UnitTest
                 return Task.CompletedTask;
             };
 
-            Exception ex = await Assert.ThrowsAsync<Exceptions.RuleValidationException>(action);
+            Exception ex = await Assert.ThrowsAsync<ValidationException>(action);
 
             Assert.Contains(Constants.OPERATOR_RULES_ERRMSG, ex.Message);
 

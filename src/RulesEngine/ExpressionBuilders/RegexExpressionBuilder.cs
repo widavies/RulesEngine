@@ -58,7 +58,7 @@ namespace RulesEngine.ExpressionBuilders
                 }
                 
                 var ruleDelegate = _ruleExpressionParser.Compile<ValueTuple<bool, string, ValueTuple<int, int>>>(
-                    ApplyRegexMatch(Utils.ExpandReferences(rule.Expression)), ruleParams);
+                    ApplyRegexMatch(Utils.ExpandReferences(rule.RawExpression)), ruleParams);
                 return Helpers.ToResultTree1(_reSettings, rule, null, ruleDelegate);
             }
             catch (Exception ex)
