@@ -17,6 +17,9 @@ namespace RulesEngine.Interfaces
         /// <returns>List of rule results</returns>
         ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName, params object[] inputs);
 
+        ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName, RuleParameter[] inputs,
+            ScopedParam[] contextParams);
+
         /// <summary>
         /// This will execute all the rules of the specified workflow
         /// </summary>
