@@ -11,7 +11,7 @@
 	<PackageReleaseNotes>https://github.com/microsoft/RulesEngine/blob/main/CHANGELOG.md</PackageReleaseNotes>
 	<PackageTags>BRE, Rules Engine, Abstraction</PackageTags>
 	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	<PackageVersion>10.0.3</PackageVersion>
+	<PackageVersion>10.0.4</PackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">

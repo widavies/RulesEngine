@@ -11,7 +11,7 @@ namespace RulesEngine.CustomTypes
         public static (bool, string, ValueTuple<int, int>) RegexMatchCaseInsensitive(string input, string pattern,
             bool additional)
         {
-            var match = Regex.Match(input, pattern);
+            var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
 
             return (match.Success && additional, match.Success ? match.Value : null,
                 match.Success ? (match.Index, match.Length) : (-1, -1));
@@ -20,7 +20,7 @@ namespace RulesEngine.CustomTypes
         public static (bool, string, ValueTuple<int, int>, string) RegexCaptureCaseInsensitive(string input,
             string pattern, bool additional)
         {
-            var match = Regex.Match(input, pattern);
+            var match = Regex.Match(input, pattern, RegexOptions.IgnoreCase);
 
             var success = match.Success && match.Groups.Count > 0;
 
