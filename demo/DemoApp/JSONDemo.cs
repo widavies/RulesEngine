@@ -6,9 +6,7 @@ using Newtonsoft.Json.Converters;
 using RulesEngine.Models;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
-using static RulesEngine.Extensions.ListofRuleResultTreeExtension;
 
 namespace DemoApp
 {
@@ -20,12 +18,7 @@ namespace DemoApp
 
             var converter = new ExpandoObjectConverter();
             
-            var inputs = new string[]
-                {
-                   
-                };
-
-            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "uF1.json", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(Directory.GetCurrentDirectory(), "group.json", SearchOption.AllDirectories);
             if (files == null || files.Length == 0)
                 throw new Exception("Rules not found.");
 
@@ -33,10 +26,15 @@ namespace DemoApp
             var workflow = JsonConvert.DeserializeObject<List<Workflow>>(fileData);
 
             var bre = new RulesEngine.RulesEngine(workflow.ToArray(), null);
+
+            var inputs = new RuleParameter[] {
+                new RuleParameter("Board_Name", "SCUF-1HX-50M"),
+                new RuleParameter("Config_Name", "0112")
+            };
             
-            var input = new RuleParameter("mn",  "uF1HXRN0-32-P1000-0136");
+            //var input = new RuleParameter("mn",  "uF1HXRN0-32-P1000-0136");
             
-            List<RuleResultTree> resultList = bre.ExecuteAllRulesAsync("ExtractFeatures", input).Result;
+            var resultList = bre.ExecuteAllRulesAsync("groups-uF1", inputs).Result;
 
             foreach (var rule in resultList)
             {
