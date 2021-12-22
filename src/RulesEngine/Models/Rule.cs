@@ -18,7 +18,7 @@ namespace RulesEngine.Models
         /// <summary>
         /// Rule name for the Rule
         /// </summary>
-        public string RuleName { get; set; } = Guid.NewGuid().ToString();
+        public string RuleName { get; set; } = $"__DEFAULT__-{Guid.NewGuid().ToString()}";
         /// <summary>	
         /// Gets or sets the custom property or tags of the rule.	
         /// </summary>	
