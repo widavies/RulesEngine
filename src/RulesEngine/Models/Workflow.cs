@@ -9,7 +9,8 @@ namespace RulesEngine.Models
 {
     [Obsolete("WorkflowRules class is deprecated. Use Workflow class instead.")]
     [ExcludeFromCodeCoverage]
-    public class WorkflowRules : Workflow {
+    public class WorkflowRules : Workflow
+    {
     }
 
     /// <summary>
@@ -23,13 +24,14 @@ namespace RulesEngine.Models
         /// </summary>
         public string WorkflowName { get; set; }
 
-    /// <summary>Gets or sets the workflow rules to inject.</summary>
-    /// <value>The workflow rules to inject.</value>
-    [Obsolete("WorkflowRulesToInject is deprecated. Use WorkflowsToInject instead.")]
-    public IEnumerable<string> WorkflowRulesToInject {
-      set { WorkflowsToInject = value; }
-    }
-    public IEnumerable<string> WorkflowsToInject { get; set; }
+        /// <summary>Gets or sets the workflow rules to inject.</summary>
+        /// <value>The workflow rules to inject.</value>
+        [Obsolete("WorkflowRulesToInject is deprecated. Use WorkflowsToInject instead.")]
+        public IEnumerable<string> WorkflowRulesToInject {
+            set { WorkflowsToInject = value; }
+        }
+
+        public IEnumerable<string> WorkflowsToInject { get; set; }
 
         /// <summary>
         /// Gets or Sets the global params which will be applicable to all rules

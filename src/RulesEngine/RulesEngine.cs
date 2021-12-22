@@ -117,7 +117,21 @@ namespace RulesEngine
         public async ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName,
             params RuleParameter[] ruleParams)
         {
-            var ruleResultList = ValidateWorkflowAndExecuteRule(workflowName, ruleParams);
+            var ruleResultList = ValidateWorkflowAndExecuteRule(workflowName, ruleParams, null);
+            await ExecuteActionAsync(ruleResultList);
+            return ruleResultList;
+        }
+        
+        /// <summary>
+        /// This will execute all the rules of the specified workflow
+        /// </summary>
+        /// <param name="workflowName">The name of the workflow with rules to execute against the inputs</param>
+        /// <param name="ruleParams">A variable number of rule parameters</param>
+        /// <returns>List of rule results</returns>
+        public async ValueTask<List<RuleResultTree>> ExecuteAllRulesAsync(string workflowName,
+            RuleParameter[] ruleParams, ScopedParam[] contextParams)
+        {
+            var ruleResultList = ValidateWorkflowAndExecuteRule(workflowName, ruleParams, contextParams);
             await ExecuteActionAsync(ruleResultList);
             return ruleResultList;
         }
@@ -336,8 +350,9 @@ namespace RulesEngine
         /// <typeparam name="T">type of entity</typeparam>
         /// <param name="input">input</param>
         /// <param name="workflowName">workflow name</param>
+        /// <param name="contextParams">Global (across all workflows), externally provided params</param>
         /// <returns>list of rule result set</returns>
-        private List<RuleResultTree> ValidateWorkflowAndExecuteRule(string workflowName, RuleParameter[] ruleParams)
+        private List<RuleResultTree> ValidateWorkflowAndExecuteRule(string workflowName, RuleParameter[] ruleParams, ScopedParam[] contextParams)
         {
             var workflow = _rulesCache.GetWorkflow(workflowName);
             if (workflow != null)
@@ -350,6 +365,11 @@ namespace RulesEngine
 
                 var intermediateParams = new List<ScopedParam>();
 
+                if (contextParams != null)
+                {
+                    intermediateParams.AddRange(contextParams);
+                }
+                
                 foreach (var rule in rules)
                 {
                     if (RegisterRule(workflowName, rule, intermediateParams.ToArray(), ruleParams))

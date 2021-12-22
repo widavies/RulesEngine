@@ -27,7 +27,6 @@ namespace RulesEngine.ExpressionBuilders
         {
             try
             {
-                // Add requires
                 var ruleDelegate = _ruleExpressionParser.Compile<bool>(
                     $"{rule.RawExpression} && {Utils.RequiresToExpression(rule.Requires, null)}", ruleParams);
                 return Helpers.ToResultTree(_reSettings, rule, null, ruleDelegate);

@@ -114,7 +114,8 @@ namespace RulesEngine
             }
             else if (rule.Expression == null && rule.Requires != null && rule.Rules != null && rule.Rules.Any())
             {
-                ruleFn = BuildBothFunc(rule, extendedRuleParams);
+                return GetWrappedRuleFunc2(rule, BuildRuleFunc(rule, extendedRuleParams),
+                    BuildNestedRuleFunc(rule, ExpressionType.Or, extendedRuleParams), ruleParams, scopedParamList);
             }
             else
             {
@@ -208,32 +209,6 @@ namespace RulesEngine
             };
         }
 
-        private RuleFunc<RuleResultTree> BuildBothFunc(Rule parentRule, RuleParameter[] ruleParams)
-        {
-            var ruleFuncList = new List<RuleFunc<RuleResultTree>>();
-
-            var scopedParamList =
-                GetRuleExpressionParameters(parentRule.RuleExpressionType, parentRule?.LocalParams, ruleParams);
-
-            var extendedRuleParams = ruleParams.Concat(scopedParamList.Select(c =>
-                    new RuleParameter(c.ParameterExpression.Name, c.ParameterExpression.Type)))
-                .ToArray();
-
-            var parent = BuildRuleFunc(parentRule, extendedRuleParams)(ruleParams);
-
-            foreach (var r in parentRule.Rules.Where(c => c.Enabled))
-            {
-                ruleFuncList.Add(GetDelegateForRule(r, ruleParams));
-            }
-
-            return (paramArray) => {
-                var (isSuccess, resultList) = ApplyOperation(paramArray, ruleFuncList, ExpressionType.Or);
-                Func<object[], bool> isSuccessFn = (p) => parent.IsSuccess;
-                var result = Helpers.ToResultTree(_reSettings, parentRule, resultList, isSuccessFn);
-                return result(paramArray);
-            };
-        }
-
         private (bool isSuccess, IEnumerable<RuleResultTree> result) ApplyOperation(RuleParameter[] paramArray,
             IEnumerable<RuleFunc<RuleResultTree>> ruleFuncList, ExpressionType operation)
         {
@@ -286,6 +261,49 @@ namespace RulesEngine
             }
 
             return (isSuccess, resultList);
+        }
+
+        private RuleFunc<RuleResultTree> GetWrappedRuleFunc2(Rule rule, RuleFunc<RuleResultTree> ruleFunc,
+            RuleFunc<RuleResultTree> ruleFunc2,
+            RuleParameter[] ruleParameters, RuleExpressionParameter[] ruleExpParams)
+        {
+            var paramDelegate = GetExpressionBuilder(rule.RuleExpressionType)
+                .CompileScopedParams(ruleParameters, ruleExpParams);
+
+            return (ruleParams) => {
+                var inputs = ruleParams.Select(c => c.Value).ToArray();
+                IEnumerable<RuleParameter> scopedParams;
+                try
+                {
+                    var scopedParamsDict = paramDelegate(inputs);
+                    scopedParams = scopedParamsDict.Select(c => new RuleParameter(c.Key, c.Value));
+                }
+                catch (Exception ex)
+                {
+                    var message = $"Error while executing scoped params for rule `{rule.RuleName}` - {ex}";
+                    var resultFn = Helpers.ToRuleExceptionResult(_reSettings, rule, new RuleException(message, ex));
+                    return resultFn(ruleParams);
+                }
+
+                var extendedInputs = ruleParams.Concat(scopedParams);
+                var parameters = extendedInputs as RuleParameter[] ?? extendedInputs.ToArray();
+                var result = ruleFunc(parameters.ToArray());
+                var childResult = ruleFunc2(parameters.ToArray());
+                
+                
+                
+                // To be removed in next major release
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (result.RuleEvaluatedParams == null)
+                {
+                    result.RuleEvaluatedParams = scopedParams;
+                }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+                result.ChildResults = childResult.ChildResults;
+
+                return result;
+            };
         }
 
         private RuleFunc<RuleResultTree> GetWrappedRuleFunc(Rule rule, RuleFunc<RuleResultTree> ruleFunc,
